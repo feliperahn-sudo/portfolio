@@ -1,0 +1,16 @@
+name: checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bloquear scripts/estilos inline e fontes com caminho absoluto
+        run: |
+          ! grep -nP '<script(?![^>]*src)' index.html
+          ! grep -nE 'url\("/' style.css
+      - name: Procurar segredos comuns
+        run: |
+          ! grep -rnEI '(api[_-]?key|secret|token|password)\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{12,}' --include='*.js' --include='*.html' --include='*.css' .
