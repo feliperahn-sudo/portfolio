@@ -23,6 +23,6 @@
 
 .skip-link{position:fixed;left:14px;top:-60px;z-index:100;padding:10px 16px;border-radius:10px;background:var(--blue);color:#fff;font:700 11px "Space Mono";text-decoration:none;transition:top .2s}.skip-link:focus{top:14px}
 a:focus-visible,button:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
-@media(prefers-reduced-motion:reduce){.hero-video{display:none}.hero{background:#07122c url("assets/images/cs-03.jpg") center/cover}}
 
 .media-carousel:focus-within .carousel-track{animation-play-state:paused}
+.carousel-track{will-change:transform}.hero-video{transform:scale(1.04);animation:herozoom 18s ease-in-out infinite alternate}@keyframes herozoom{to{transform:scale(1.12)}}@media(prefers-reduced-motion:reduce){.hero-video,.carousel-track{animation:none}}
