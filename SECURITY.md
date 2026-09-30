@@ -6,6 +6,11 @@ Site estático (HTML/CSS/JS), sem backend, formulários, cookies ou dependência
 Envie e-mail para feliperahn@gmail.com ou use *Security → Report a vulnerability* neste repositório. Não abra issue pública.
 
 ## Medidas em vigor
+- Trusted Types (`require-trusted-types-for 'script'`) e nenhum uso de `innerHTML`/`eval`: o DOM é montado com `textContent`.
+- `upgrade-insecure-requests`, `frame-src`/`worker-src` bloqueados e proteção anti-framing (`frame-ancestors` no `_headers` + fallback em JS).
+- CI (`checks.yml`) barra script/estilo inline, handlers `on*`, `eval`, `innerHTML`, recursos externos, links sem `rel` seguro e segredos; `codeql.yml` faz análise estática semanal e em PRs.
+- Actions com commit fixado por SHA, `persist-credentials: false` e permissões mínimas.
+- `.gitignore` para chaves/`.env` e `CODEOWNERS` para revisão obrigatória.
 - CSP restritiva via `<meta>` (apenas recursos do próprio domínio; sem scripts/estilos inline).
 - `referrer` restrito e links externos com `rel="noopener noreferrer"`.
 - Fontes, imagens e vídeo hospedados localmente (sem CDN externa).

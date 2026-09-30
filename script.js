@@ -1,11 +1,19 @@
+if(window.top!==window.self){try{window.top.location=window.self.location}catch(e){document.documentElement.hidden=true}}
 const slides=[
- {n:"01",tag:"PESSOAS",title:'Escuta que entende<br>o <em>contexto.</em>'},
- {n:"02",tag:"ESTRATÉGIA",title:'Dados que indicam<br>o <em>próximo passo.</em>'},
- {n:"03",tag:"APRENDIZAGEM",title:'Comunicação que<br>cria <em>possibilidades.</em>'}
+ {n:"01",tag:"PESSOAS",title:["Escuta que entende","o ","contexto."]},
+ {n:"02",tag:"ESTRATÉGIA",title:["Dados que indicam","o ","próximo passo."]},
+ {n:"03",tag:"APRENDIZAGEM",title:["Comunicação que","cria ","possibilidades."]}
 ];
+const SUB="Três formações. Uma trajetória conectada por comunicação, desenvolvimento humano e resultados.";
 let current=0,interval;
 const hero=document.getElementById("heroCopy"),slideButtons=[...document.querySelectorAll("[data-slide]")];
-function showSlide(index){current=index;const s=slides[index];hero.innerHTML=`<p class="eyebrow"><span>${s.n}</span><b>${s.tag}</b></p><h1>${s.title}</h1><p class="hero-sub">Três formações. Uma trajetória conectada por comunicação, desenvolvimento humano e resultados.</p>`; /* conteúdo estático e confiável: nunca inserir dados externos aqui */hero.style.animation="none";requestAnimationFrame(()=>{hero.style.animation="reveal .9s var(--ease)"});slideButtons.forEach((b,i)=>b.classList.toggle("active",i===index))}
+const el=(tag,text,cls)=>{const e=document.createElement(tag);if(text)e.textContent=text;if(cls)e.className=cls;return e};
+function showSlide(index){current=index;const s=slides[index];
+ const eyebrow=el("p",null,"eyebrow");eyebrow.append(el("span",s.n),el("b",s.tag));
+ const h1=el("h1");h1.append(s.title[0],document.createElement("br"),s.title[1],el("em",s.title[2]));
+ hero.replaceChildren(eyebrow,h1,el("p",SUB,"hero-sub"));
+ hero.style.animation="none";requestAnimationFrame(()=>{hero.style.animation="reveal .9s var(--ease)"});
+ slideButtons.forEach((b,i)=>b.classList.toggle("active",i===index))}
 function restart(){clearInterval(interval);if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;interval=setInterval(()=>showSlide((current+1)%slides.length),5600)}
 slideButtons.forEach((b,i)=>b.addEventListener("click",()=>{showSlide(i);restart()}));restart();
 document.addEventListener("visibilitychange",()=>document.hidden?clearInterval(interval):restart());
