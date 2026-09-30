@@ -26,3 +26,4 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--blue);outline-offse
 
 .media-carousel:focus-within .carousel-track{animation-play-state:paused}
 .carousel-track{will-change:transform}.hero-video{transform:scale(1.04);animation:herozoom 18s ease-in-out infinite alternate}@keyframes herozoom{to{transform:scale(1.12)}}@media(prefers-reduced-motion:reduce){.hero-video,.carousel-track{animation:none}}
+@media(min-width:641px){.hero-top{right:calc(5vw + 120px)}}
