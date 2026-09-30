@@ -29,3 +29,6 @@ toggle.addEventListener("click",()=>setTheme(document.documentElement.dataset.th
 const sections=["home","about","social","cs","education","trajectory","contact"];
 const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(!entry.isIntersecting)return;document.querySelectorAll(".capsule button[data-go]").forEach(b=>b.classList.toggle("active",b.dataset.go===entry.target.id))}),{rootMargin:"-35% 0px -55%"});
 sections.forEach(id=>observer.observe(document.getElementById(id)));
+
+const tl=[...document.querySelectorAll(".timeline article")];
+if("IntersectionObserver" in window&&!matchMedia("(prefers-reduced-motion: reduce)").matches){tl.forEach(a=>a.classList.add("will-reveal"));const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{threshold:.2});tl.forEach((a,i)=>{a.style.transitionDelay=i*80+"ms";io.observe(a)})}
