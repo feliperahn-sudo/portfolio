@@ -1,0 +1,31 @@
+name: checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Sem script/estilo inline, handlers, eval ou innerHTML
+        run: |
+          ! grep -nP '<script(?![^>]*\bsrc=)' index.html
+          ! grep -nP '<style|\sstyle=|\son[a-z]+=|javascript:' index.html
+          ! grep -nE 'eval\(|new Function|document\.write|innerHTML|outerHTML|insertAdjacentHTML' script.js
+      - name: Caminhos relativos e sem recursos externos
+        run: |
+          ! grep -nE 'url\("/' style.css
+          ! grep -nE '(src|href)="http://' index.html
+          ! grep -nE '@import|url\("?https?:' style.css
+      - name: Links externos com rel seguro
+        run: |
+          ! grep -oP '<a [^>]*target="_blank"(?![^>]*rel="noopener noreferrer")[^>]*>' index.html | grep .
+      - name: CSP presente
+        run: grep -q 'Content-Security-Policy' index.html
+      - name: Procurar segredos comuns
+        run: |
+          ! grep -rnEI '(api[_-]?key|secret|token|password)\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{12,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,}' --exclude-dir=.git --exclude-dir=assets .
