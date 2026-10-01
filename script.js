@@ -26,9 +26,25 @@ let saved=null;try{saved=localStorage.getItem("rahn-theme")}catch(e){}
 setTheme((saved==="light"||saved==="dark"?saved:null)||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
 toggle.addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="light"?"dark":"light"));
 
-const sections=["home","about","social","cs","education","trajectory","contact"];
-const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(!entry.isIntersecting)return;document.querySelectorAll(".capsule button[data-go]").forEach(b=>b.classList.toggle("active",b.dataset.go===entry.target.id))}),{rootMargin:"-35% 0px -55%"});
+const sections=["home","about","social","cs","education","trajectory","experience","profile","contact"];
+const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(!entry.isIntersecting)return;document.querySelectorAll(".capsule button[data-go]").forEach(b=>b.classList.toggle("active",b.dataset.go===(entry.target.id==="profile"?"experience":entry.target.id)))}),{rootMargin:"-35% 0px -55%"});
 sections.forEach(id=>observer.observe(document.getElementById(id)));
 
 const tl=[...document.querySelectorAll(".timeline article")];
 if("IntersectionObserver" in window&&!matchMedia("(prefers-reduced-motion: reduce)").matches){tl.forEach(a=>a.classList.add("will-reveal"));const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{threshold:.2});tl.forEach((a,i)=>{a.style.transitionDelay=i*80+"ms";io.observe(a)})}
+
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* filtro de experiência */
+const chips=[...document.querySelectorAll(".chip")],roles=[...document.querySelectorAll(".role")];
+chips.forEach(c=>c.addEventListener("click",()=>{const f=c.dataset.filter;chips.forEach(x=>{const on=x===c;x.classList.toggle("active",on);x.setAttribute("aria-pressed",String(on))});roles.forEach(r=>{r.hidden=!(f==="all"||r.dataset.area===f)})}));
+/* salvar currículo em PDF (impressão do navegador) */
+const printBtn=document.getElementById("printCv");let wasOpen=[];
+if(printBtn)printBtn.addEventListener("click",()=>window.print());
+addEventListener("beforeprint",()=>{wasOpen=roles.map(r=>r.open);roles.forEach(r=>{r.open=true;r.hidden=false})});
+addEventListener("afterprint",()=>{roles.forEach((r,i)=>{r.open=wasOpen[i]});const a=chips.find(c=>c.classList.contains("active"));if(a&&a.dataset.filter!=="all")roles.forEach(r=>{r.hidden=r.dataset.area!==a.dataset.filter})});
+/* contadores */
+const counters=[...document.querySelectorAll("[data-count]")];
+if("IntersectionObserver" in window&&!reduce){const co=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;co.unobserve(e.target);const n=+e.target.dataset.count,suf=e.target.querySelector("span"),t0=performance.now();const tick=t=>{const p=Math.min((t-t0)/1100,1),v=Math.round(n*(1-Math.pow(1-p,3)));e.target.firstChild.nodeValue=String(v);if(p<1)requestAnimationFrame(tick)};requestAnimationFrame(tick)}),{threshold:.6});counters.forEach(c=>{c.firstChild.nodeValue="0";co.observe(c)})}
+/* barra de progresso */
+const bar=document.getElementById("progress");
+if(bar){let tk=false;const up=()=>{const d=document.documentElement,m=d.scrollHeight-innerHeight;bar.style.transform="scaleX("+(m>0?scrollY/m:0)+")";tk=false};addEventListener("scroll",()=>{if(!tk){tk=true;requestAnimationFrame(up)}},{passive:true});up()}
