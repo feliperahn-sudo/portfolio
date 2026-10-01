@@ -147,6 +147,14 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none!importa
 .cell.foc .add{opacity:.9}
 .hint{font-size:12px;color:var(--muted);margin-top:8px}
 
+/* Modelo de mensagem */
+.tpl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:24px;margin-top:18px}
+.tpl-in{display:grid;gap:14px;align-content:start}
+.tpl-btns{display:flex;flex-wrap:wrap;gap:8px}
+.tpl .f select,.tpl .f textarea{border:1px solid var(--line);background:var(--bg);padding:9px 10px;width:100%;border-radius:0}
+.tpl .f textarea{min-height:110px;resize:vertical}
+.tpl-out{min-height:260px!important;line-height:1.55}
+@media (max-width:760px){.tpl{grid-template-columns:minmax(0,1fr)}}
 /* Riscos */
 .risks{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;margin-top:20px}
 .risk{border:1px solid var(--line);padding:16px 18px;display:grid;gap:10px;align-content:start}
@@ -228,6 +236,19 @@ footer .tagline{font-size:11px}
     <p class="lead">Cada analista tem o seu quadro, com as semanas na horizontal até a S1 de novembro. A semana atual e a próxima ficam destacadas em azul. Clique em uma reunião para editar data, horário, agenda, analista e status.</p>
     <div class="board" id="board" aria-label="Agenda de reuniões por analista"></div>
     <p class="hint" id="hint"></p>
+  </section>
+  <section id="modelo">
+    <p class="eyebrow">Modelo de mensagem</p>
+    <h2>Agendamento da Reunião de Alinhamento</h2>
+    <p class="lead">Escolha o cliente, escreva as opções de data e horário (uma por linha) e copie a mensagem pronta.</p>
+    <div class="tpl">
+      <div class="tpl-in">
+        <div class="f"><label for="t-cli">Cliente</label><select id="t-cli"></select></div>
+        <div class="f"><label for="t-slots">Datas e horários disponíveis</label><textarea id="t-slots" placeholder="Ex.: terça, 07/10, às 10h&#10;quinta, 09/10, às 15h"></textarea></div>
+        <div class="tpl-btns"><button class="btn primary" id="t-copy" type="button">Copiar mensagem</button><button class="btn ghost" id="t-reset" type="button">Restaurar modelo</button></div>
+      </div>
+      <div class="f"><label for="t-out">Mensagem (pode editar o texto antes de copiar)</label><textarea id="t-out" class="tpl-out"></textarea></div>
+    </div>
   </section>
   <section id="riscos"></section>
   <section id="historico"></section>
@@ -539,6 +560,7 @@ function render(keepScroll){
   document.getElementById("b-new").disabled=RO;$("b-client").disabled=RO;$("b-imp").disabled=RO||mode==="shared";
   var sy2=document.getElementById("sync");sy2.setAttribute("data-s",mode==="shared"?"shared":"x");
   sy2.lastChild.textContent=RO?"Somente leitura":mode==="shared"?"Salvo para o time":mode==="local"?(lsOK?"Salvo neste navegador":"Sem salvar: exporte o backup"):"Conectando";
+  fillModelo();
   resolveNames();
 }
 function scrollToCol(key){
@@ -701,6 +723,30 @@ document.addEventListener("keydown",function(e){
 $("b-focus").addEventListener("click",function(){document.getElementById("detalhe").scrollIntoView({behavior:"smooth",block:"start"});scrollToCol(monday(TODAY))});
 $("b-month").addEventListener("click",function(){monthOnly=!monthOnly;try{localStorage.setItem(MKEY,monthOnly?"1":"0")}catch(e){}render()});
 (function(){
+  var TK="upfy-mapa-reunioes-modelo",edited=false;
+  function build(){
+    var c=$("t-cli").value,s=$("t-slots").value.trim();
+    var slots=s?s.split(/\n+/).map(function(x){return "• "+x.replace(/^[•\-\s]+/,"")}).join("\n"):"[inserir data e horário]";
+    return "Olá"+(c?", "+c:"")+"! Tudo bem?\n\nEstou passando para agendar a nossa próxima Reunião de Alinhamento. Tenho disponibilidade em:\n\n"+slots+"\n\nPoderia me dar uma devolutiva e confirmar qual horário fica melhor para você? Assim já deixo tudo agendado.\n\nAgradeço desde já!";
+  }
+  function gen(){edited=false;$("t-out").value=build();try{localStorage.setItem(TK,JSON.stringify({c:$("t-cli").value,s:$("t-slots").value}))}catch(e){}}
+  window.fillModelo=function(){
+    var sel=$("t-cli"),cur=sel.value,names={};
+    meetings().forEach(function(m){names[m.cliente]=1});
+    sel.innerHTML='<option value="">Sem nome do cliente</option>'+Object.keys(names).sort(function(a,b){return a.localeCompare(b)}).map(function(n){return '<option value="'+esc(n)+'">'+esc(n)+"</option>"}).join("");
+    sel.value=cur;if(!edited&&!$("t-out").value)gen();
+  };
+  $("t-cli").addEventListener("change",gen);$("t-slots").addEventListener("input",gen);
+  $("t-out").addEventListener("input",function(){edited=true});
+  $("t-reset").addEventListener("click",gen);
+  $("t-copy").addEventListener("click",function(){
+    var v=$("t-out").value;
+    function fb(){$("t-out").select();try{document.execCommand("copy");toast("Mensagem copiada.")}catch(e){toast("Selecione o texto e copie manualmente.")}}
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(v).then(function(){toast("Mensagem copiada.")},fb);else fb();
+  });
+  try{var r=JSON.parse(localStorage.getItem(TK)||"null");if(r){window.__tpl=r}}catch(e){}
+})();
+(function(){
   var d=null,moved=false;
   document.addEventListener("mousedown",function(e){
     if(e.button!==0)return;var w=e.target.closest&&e.target.closest(".weeks");if(!w)return;
@@ -729,6 +775,7 @@ document.addEventListener("visibilitychange",function(){if(!document.hidden&&iso
 
 /* ---------- início ---------- */
 checkLS();loadLocal();render(false);
+if(window.__tpl){$("t-slots").value=window.__tpl.s||"";$("t-cli").value=window.__tpl.c||"";$("t-slots").dispatchEvent(new Event("input"))}
 setTimeout(function(){scrollToCol(monday(TODAY))},0);
 (function connect(){
   var c=window.claude;
