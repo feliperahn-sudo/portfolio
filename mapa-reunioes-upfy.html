@@ -89,12 +89,16 @@ th{font-size:12px;font-weight:500;color:var(--muted);letter-spacing:.04em}
 td.num,th.num{text-align:right}
 
 /* Quadro: um callout por analista, semanas em linha horizontal */
-.board{margin-top:18px;display:grid;gap:22px}
+.board{margin-top:18px;display:grid;grid-template-columns:minmax(0,1fr);gap:22px}
+.callout{min-width:0}
 .callout{border:1px solid var(--line);border-left:6px solid var(--accent);background:var(--bg)}
 .co-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;padding:14px 18px;background:var(--surface);border-bottom:1px solid var(--line)}
 .co-head b{font-size:22px;font-weight:800;letter-spacing:-.01em}
 .co-head small{color:var(--muted);font-size:13px}
 .co-head .co-n{margin-left:auto;font-variant-numeric:tabular-nums;font-size:13px;color:var(--accent-ink);font-weight:700}
+.weeks{cursor:grab}
+body.dragging,body.dragging *{cursor:grabbing!important;user-select:none!important}
+#b-month[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .weeks{display:flex;overflow-x:auto;overscroll-behavior-x:contain}
 .wk-col{flex:0 0 var(--col-o);width:var(--col-o);display:flex;flex-direction:column;border-right:1px solid var(--line)}
 .wk-col.foc{flex-basis:var(--col-f);width:var(--col-f)}
@@ -203,6 +207,7 @@ footer .tagline{font-size:11px}
 <div class="bar">
   <div class="wrap">
     <div class="chips" id="chips" role="group" aria-label="Filtrar por analista"></div>
+    <button class="btn ghost" id="b-month" aria-pressed="false" title="Mostra só as semanas do mês atual nos quadros">Só o mês vigente</button>
     <button class="btn ghost" id="b-focus">Ir para esta semana</button>
     <span class="sp"></span>
     <span class="sync" id="sync" data-s="wait"><i></i><span>Conectando</span></span>
@@ -296,6 +301,8 @@ var overrides = {};
 var hist = [];
 var DB = null, USER = null, UID = "", RO = false, mode = "wait";
 var filter = "Todos";
+var monthOnly = false, MKEY = "upfy-mapa-reunioes-mes";
+try{monthOnly=localStorage.getItem(MKEY)==="1"}catch(e){}
 var clientMode = false, lsOK = true;
 var editing = null, preset = null, delArmed = false, drawerOpen = false;
 var baseMap = {}; BASE.forEach(function(b){baseMap[b.id]=b});
@@ -439,6 +446,7 @@ function cardHTML(m,a,c,bad){
 }
 function boardHTML(ms,cols){
   var lanes=filter==="Todos"?ANALISTAS:[filter],bad=conflicts(ms),h="";
+  if(monthOnly){var ym=TODAY.slice(0,7);cols=cols.filter(function(c){return c.key!=="jul"&&addDays(c.key,3).slice(0,7)===ym})}
   lanes.forEach(function(a){
     var own=ms.filter(function(m){return m.analista===a&&colOf(m)!=="jul"&&active(m)}),cl={};own.forEach(function(m){cl[m.cliente]=1});
     var pend=ms.filter(function(m){return m.analista===a&&!m.data&&active(m)}).length;
@@ -522,11 +530,12 @@ function render(keepScroll){
   document.getElementById("global").innerHTML=globalHTML(ms,cols);
   b.innerHTML=boardHTML(ms,cols);
   if(keepScroll!==false){Array.prototype.forEach.call(b.querySelectorAll(".weeks"),function(w,i){w.scrollLeft=sx[i]||0});window.scrollTo(window.scrollX,sy)}
-  document.getElementById("hint").textContent=RO?"Somente leitura: você pode ver o mapa, mas não editar.":"Dica: clique em uma reunião para editar. Em \"+ Adicionar\" você cria uma vaga \"a agendar\" naquela semana.";
+  document.getElementById("hint").textContent=RO?"Somente leitura: você pode ver o mapa, mas não editar.":"Dica: clique em uma reunião para editar. Arraste as semanas com o mouse para os lados, sem usar a barra de rolagem. Em \"+ Adicionar\" você cria uma vaga \"a agendar\" naquela semana.";
   document.getElementById("riscos").innerHTML=riscosHTML(ms);
   document.getElementById("historico").innerHTML=histHTML(ms,histNames);
   document.getElementById("fontes").innerHTML=fontesHTML();
   document.getElementById("chips").innerHTML=["Todos"].concat(ANALISTAS).map(function(a){return '<button class="chip" data-f="'+a+'" aria-pressed="'+(a===filter)+'">'+a+"</button>"}).join("");
+  var bm=document.getElementById("b-month");bm.setAttribute("aria-pressed",monthOnly);bm.textContent=monthOnly?"Mostrar todas as semanas":"Só o mês vigente";
   document.getElementById("b-new").disabled=RO;$("b-client").disabled=RO;$("b-imp").disabled=RO||mode==="shared";
   var sy2=document.getElementById("sync");sy2.setAttribute("data-s",mode==="shared"?"shared":"x");
   sy2.lastChild.textContent=RO?"Somente leitura":mode==="shared"?"Salvo para o time":mode==="local"?(lsOK?"Salvo neste navegador":"Sem salvar: exporte o backup"):"Conectando";
@@ -690,6 +699,22 @@ document.addEventListener("keydown",function(e){
   if(e.key==="Escape"&&drawerOpen){closeDrawer();return}
 });
 $("b-focus").addEventListener("click",function(){document.getElementById("detalhe").scrollIntoView({behavior:"smooth",block:"start"});scrollToCol(monday(TODAY))});
+$("b-month").addEventListener("click",function(){monthOnly=!monthOnly;try{localStorage.setItem(MKEY,monthOnly?"1":"0")}catch(e){}render()});
+(function(){
+  var d=null,moved=false;
+  document.addEventListener("mousedown",function(e){
+    if(e.button!==0)return;var w=e.target.closest&&e.target.closest(".weeks");if(!w)return;
+    d={w:w,x:e.clientX,l:w.scrollLeft,on:false};
+  });
+  document.addEventListener("mousemove",function(e){
+    if(!d)return;var dx=e.clientX-d.x;
+    if(!d.on){if(Math.abs(dx)<5)return;d.on=true;document.body.classList.add("dragging")}
+    d.w.scrollLeft=d.l-dx;
+  });
+  function end(){if(!d)return;moved=d.on;d=null;document.body.classList.remove("dragging");if(moved)setTimeout(function(){moved=false},0)}
+  document.addEventListener("mouseup",end);window.addEventListener("blur",end);
+  document.addEventListener("click",function(e){if(moved){e.stopPropagation();e.preventDefault();moved=false}},true);
+})();
 $("b-client").addEventListener("click",function(){if(RO)return;openDrawer(null,{cliente:true})});
 $("b-exp").addEventListener("click",exportBackup);
 $("b-imp").addEventListener("click",function(){$("f-imp").click()});
