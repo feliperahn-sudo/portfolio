@@ -55,6 +55,7 @@ ul{padding:0;list-style:none}
 .btn.danger:hover{background:var(--ferrari-bg)}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 .sp{flex:1}
+.dform.cm .hide-cm{display:none}
 .sync{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);white-space:nowrap}
 .sync i{width:8px;height:8px;background:var(--muted);display:inline-block}
 .sync[data-s="shared"] i{background:var(--accent-ink)}
@@ -205,6 +206,10 @@ footer .tagline{font-size:11px}
     <button class="btn ghost" id="b-focus">Ir para esta semana</button>
     <span class="sp"></span>
     <span class="sync" id="sync" data-s="wait"><i></i><span>Conectando</span></span>
+    <button class="btn ghost" id="b-exp" title="Baixa um arquivo com as suas alterações">Exportar backup</button>
+    <button class="btn ghost" id="b-imp" title="Restaura alterações de um backup">Importar backup</button>
+    <input type="file" id="f-imp" accept="application/json,.json" hidden>
+    <button class="btn" id="b-client">Novo cliente</button>
     <button class="btn primary" id="b-new">Nova reunião</button>
   </div>
 </div>
@@ -237,15 +242,15 @@ footer .tagline{font-size:11px}
       <div class="f"><label for="m-analista">Piloto (prioridade no agendamento)</label><select id="m-analista"></select></div>
       <div class="f"><label for="m-copiloto">Copiloto (apoio)</label><select id="m-copiloto"></select></div>
     </div>
-    <div class="two">
+    <div class="two hide-cm">
       <div class="f"><label for="m-data">Data</label><input id="m-data" type="date"></div>
       <div class="f"><label for="m-hora">Horário</label><input id="m-hora" type="time"></div>
     </div>
     <div class="f" id="f-semana"><label for="m-semana">Semana prevista (sem data definida)</label><select id="m-semana"></select></div>
-    <div class="f"><label for="m-status">Status</label><select id="m-status">
+    <div class="f hide-cm"><label for="m-status">Status</label><select id="m-status">
       <option value="">Automático (pela data)</option><option value="realizada">Realizada (check)</option><option value="remarcada">Remarcada</option><option value="cancelada">Cancelada</option></select></div>
-    <div class="f"><label for="m-link">Link da agenda ou da chamada</label><input id="m-link" type="url" placeholder="https://"></div>
-    <div class="f"><label for="m-pauta">Pauta e observações</label><textarea id="m-pauta"></textarea></div>
+    <div class="f hide-cm"><label for="m-link">Link da agenda ou da chamada</label><input id="m-link" type="url" placeholder="https://"></div>
+    <div class="f hide-cm"><label for="m-pauta">Pauta e observações</label><textarea id="m-pauta"></textarea></div>
     <p class="err" id="d-err" role="alert"></p>
   </form>
   <div class="dfoot">
@@ -291,11 +296,31 @@ var overrides = {};
 var hist = [];
 var DB = null, USER = null, UID = "", RO = false, mode = "wait";
 var filter = "Todos";
+var clientMode = false, lsOK = true;
 var editing = null, preset = null, delArmed = false, drawerOpen = false;
 var baseMap = {}; BASE.forEach(function(b){baseMap[b.id]=b});
 
 function loadLocal(){try{var r=JSON.parse(localStorage.getItem(LSKEY)||"null");if(r){overrides=r.overrides||{};hist=r.hist||[]}}catch(e){}}
-function saveLocal(){try{localStorage.setItem(LSKEY,JSON.stringify({overrides:overrides,hist:hist.slice(0,60)}))}catch(e){}}
+function saveLocal(){try{localStorage.setItem(LSKEY,JSON.stringify({overrides:overrides,hist:hist.slice(0,60)}));lsOK=true}catch(e){if(lsOK){lsOK=false;toast("Este navegador bloqueou o armazenamento. Use Exportar backup para não perder as alterações.")}render()}}
+function checkLS(){try{var k=LSKEY+"-t";localStorage.setItem(k,"1");localStorage.removeItem(k)}catch(e){lsOK=false}}
+function exportBackup(){
+  var data=JSON.stringify({v:1,overrides:overrides,hist:hist},null,1);
+  try{var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:"application/json"}));a.download="mapa-reunioes-upfy-backup.json";document.body.appendChild(a);a.click();a.remove();toast("Backup exportado.")}
+  catch(e){toast("Não consegui baixar o arquivo neste ambiente.")}
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(data).catch(function(){});
+}
+function importBackup(file){
+  if(!file)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var j=JSON.parse(r.result);if(!j||typeof j.overrides!=="object")throw 0;
+      if(DB){toast("Importar só funciona no modo local.");return}
+      overrides=j.overrides;hist=j.hist||[];saveLocal();render();toast("Backup restaurado.");
+    }catch(e){toast("Arquivo de backup inválido.")}
+  };
+  r.readAsText(file);
+}
 
 function meetings(includeRemoved){
   var map={},id;
@@ -502,9 +527,9 @@ function render(keepScroll){
   document.getElementById("historico").innerHTML=histHTML(ms,histNames);
   document.getElementById("fontes").innerHTML=fontesHTML();
   document.getElementById("chips").innerHTML=["Todos"].concat(ANALISTAS).map(function(a){return '<button class="chip" data-f="'+a+'" aria-pressed="'+(a===filter)+'">'+a+"</button>"}).join("");
-  document.getElementById("b-new").disabled=RO;
+  document.getElementById("b-new").disabled=RO;$("b-client").disabled=RO;$("b-imp").disabled=RO||mode==="shared";
   var sy2=document.getElementById("sync");sy2.setAttribute("data-s",mode==="shared"?"shared":"x");
-  sy2.lastChild.textContent=RO?"Somente leitura":mode==="shared"?"Salvo para o time":mode==="local"?"Só neste navegador":"Conectando";
+  sy2.lastChild.textContent=RO?"Somente leitura":mode==="shared"?"Salvo para o time":mode==="local"?(lsOK?"Salvo neste navegador":"Sem salvar: exporte o backup"):"Conectando";
   resolveNames();
 }
 function scrollToCol(key){
@@ -561,12 +586,15 @@ function fillWeeks(sel){
 }
 function syncSemana(){$("f-semana").hidden=!!$("m-data").value}
 function openDrawer(id,pre){
+  clientMode=!!(pre&&pre.cliente);
   editing=id;preset=pre||null;delArmed=false;
   var m=id?meetings(true).filter(function(x){return x.id===id})[0]:null;
   fillSelects();
   var base=m||{cliente:"",analista:(pre&&pre.analista)||(filter!=="Todos"?filter:ANALISTAS[0]),copiloto:"",data:"",hora:"",semana:(pre&&pre.semana)||monday(TODAY),status:"",link:"",pauta:""};
-  $("d-title").textContent=m?"Editar reunião":"Nova reunião";
-  $("d-origin").textContent=m?(m.origem?"Origem: "+m.origem:"Criada nesta página"):"Sem data, ela entra como \"a agendar\" na semana escolhida.";
+  $("dform").classList.toggle("cm",clientMode);
+  ["d-cancel","d-clear"].forEach(function(i){$(i).hidden=clientMode});
+  $("d-title").textContent=clientMode?"Novo cliente":m?"Editar reunião":"Nova reunião";
+  $("d-origin").textContent=m?(m.origem?"Origem: "+m.origem:"Criada nesta página"):(clientMode?"O cliente entra com uma reunião \"a agendar\" na semana escolhida.":"Sem data, ela entra como \"a agendar\" na semana escolhida.");
   $("m-cliente").value=base.cliente;$("m-analista").value=base.analista;$("m-copiloto").value=base.copiloto||"";
   $("m-data").value=base.data||"";$("m-hora").value=base.hora||"";$("m-status").value=base.status||"";$("m-link").value=base.link||"";$("m-pauta").value=base.pauta||"";
   fillWeeks(base.semana||monday(TODAY));syncSemana();
@@ -587,12 +615,16 @@ function saveForm(){
   if(!v.cliente){$("d-err").textContent="Informe o nome do cliente.";$("m-cliente").focus();return}
   if(v.link&&!/^https?:\/\//i.test(v.link)){$("d-err").textContent="O link precisa começar com http:// ou https://.";$("m-link").focus();return}
   if(v.copiloto===v.analista)v.copiloto="";
+  if(clientMode&&!editing){
+    var nm=v.cliente.toLowerCase();
+    if(meetings().some(function(x){return x.cliente.toLowerCase()===nm})){$("d-err").textContent="Esse cliente já existe no mapa.";$("m-cliente").focus();return}
+  }
   var prev=editing?meetings(true).filter(function(x){return x.id===editing})[0]:null;
   var id=editing||("n-"+Date.now().toString(36)+Math.random().toString(36).slice(2,5));
-  var doc=Object.assign({flags:[],origem:"",nota:""},prev||{},{id:id,cliente:v.cliente,analista:v.analista,copiloto:v.copiloto,data:v.data,hora:v.hora,status:v.status,link:v.link,pauta:v.pauta,removida:false,atualizadoEm:Date.now(),atualizadoPor:UID||""});
+  var doc=Object.assign({flags:clientMode?["novo"]:[],origem:clientMode?"Adicionado nesta página":"",nota:""},prev||{},{id:id,cliente:v.cliente,analista:v.analista,copiloto:v.copiloto,data:v.data,hora:v.hora,status:v.status,link:v.link,pauta:v.pauta,removida:false,atualizadoEm:Date.now(),atualizadoPor:UID||""});
   doc.semana=v.data?monday(v.data):v.semana;
   var acao;
-  if(!prev)acao="criou a reunião"+(v.data?" para "+fmt(v.data):" como a agendar");
+  if(!prev)acao=clientMode?"adicionou o cliente (piloto "+doc.analista+")":"criou a reunião"+(v.data?" para "+fmt(v.data):" como a agendar");
   else{
     var ch=[];Object.keys(LBL).forEach(function(k){if((prev[k]||"")!==(doc[k]||""))ch.push(LBL[k]+": "+showV(k,prev[k])+" para "+showV(k,doc[k]))});
     if(!v.data&&(prev.semana||"")!==doc.semana&&!prev.data)ch.push("semana prevista: "+fmt(prev.semana)+" para "+fmt(doc.semana));
@@ -658,6 +690,10 @@ document.addEventListener("keydown",function(e){
   if(e.key==="Escape"&&drawerOpen){closeDrawer();return}
 });
 $("b-focus").addEventListener("click",function(){document.getElementById("detalhe").scrollIntoView({behavior:"smooth",block:"start"});scrollToCol(monday(TODAY))});
+$("b-client").addEventListener("click",function(){if(RO)return;openDrawer(null,{cliente:true})});
+$("b-exp").addEventListener("click",exportBackup);
+$("b-imp").addEventListener("click",function(){$("f-imp").click()});
+$("f-imp").addEventListener("change",function(e){importBackup(e.target.files[0]);e.target.value=""});
 $("b-new").addEventListener("click",function(){openDrawer(null)});
 $("d-x").addEventListener("click",closeDrawer);$("scrim").addEventListener("click",closeDrawer);
 $("d-save").addEventListener("click",saveForm);$("d-del").addEventListener("click",deleteForm);$("d-revert").addEventListener("click",revertForm);
@@ -667,7 +703,7 @@ $("dform").addEventListener("submit",function(e){e.preventDefault();saveForm()})
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&iso(new Date())!==TODAY)render()});
 
 /* ---------- início ---------- */
-loadLocal();render(false);
+checkLS();loadLocal();render(false);
 setTimeout(function(){scrollToCol(monday(TODAY))},0);
 (function connect(){
   var c=window.claude;
