@@ -1,0 +1,691 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>html{color-scheme:light;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style></head><body><title>Mapa de Reuniões UPFY</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;700;800&display=swap">
+<style>
+/* Layout: capa azul UPFY, barra de filtros fixa, quadro analista x semana com foco em 2 colunas e blur nas demais. */
+:root{
+  --blue:#0006FF; --ink:#141414; --gray:#CCCCCC; --light:#EDEDED;
+  --bg:#FFFFFF; --fg:#141414; --muted:#5C5C5C; --line:#CCCCCC; --surface:#EDEDED; --card:#FFFFFF;
+  --focus:#F0F1FF; --accent:#0006FF; --accent-ink:#0006FF; --on-accent:#FFFFFF;
+  --warn:#8A4B00; --warn-bg:#FFF1D6; --bar:#CCCCCC;
+  --ferrari:#D40000; --ferrari-ink:#D40000; --ferrari-bg:#FDECEC;
+  --font:'Hanken Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --col-f:280px; --col-o:224px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141414; --fg:#EDEDED; --muted:#A6A6A6; --line:#383838; --surface:#1F1F1F; --card:#1B1B1B;
+  --focus:#10124A; --accent-ink:#8A8FFF; --warn:#F2B75B; --warn-bg:#2B2112; --bar:#4A4A4A; --ferrari-ink:#FF6B5E; --ferrari-bg:#2A1312; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#141414; --fg:#EDEDED; --muted:#A6A6A6; --line:#383838; --surface:#1F1F1F; --card:#1B1B1B;
+  --focus:#10124A; --accent-ink:#8A8FFF; --warn:#F2B75B; --warn-bg:#2B2112; --bar:#4A4A4A; --ferrari-ink:#FF6B5E; --ferrari-bg:#2A1312; color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.5;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3,p,ul{margin:0}
+ul{padding:0;list-style:none}
+.wrap{width:100%;max-width:1320px;margin:0 auto;padding-inline:clamp(16px,4vw,40px)}
+:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+
+/* Capa */
+.cover{background:var(--blue);color:#fff}
+.cover .wrap{padding-block:28px 32px;display:grid;gap:56px}
+.sig{font-weight:300;font-size:14px;line-height:1.25;letter-spacing:.01em}
+.sig b{font-weight:700;display:block}
+.cover h1{font-size:clamp(38px,7vw,76px);font-weight:800;line-height:1;letter-spacing:-.03em;text-wrap:balance}
+.cover .sub{font-weight:300;font-size:clamp(16px,2vw,20px);margin-top:14px;max-width:60ch}
+.cover .now{margin-top:22px;font-weight:500;font-size:15px}
+.cover .now span{opacity:.75;font-weight:300}
+.tagline{justify-self:end;text-align:right;font-weight:300;font-size:12px;letter-spacing:.18em;text-transform:uppercase;line-height:1.7}
+.seals{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.seal{border:1px solid rgba(255,255,255,.55);padding:8px 14px;min-width:132px}
+.seal b{display:block;font-size:24px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.seal span{font-size:12px;font-weight:300;letter-spacing:.02em}
+
+/* Barra */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding-block:10px}
+.chips{display:flex;gap:6px;overflow-x:auto;max-width:100%;padding-block:2px}
+.chip{border:1px solid var(--line);background:transparent;padding:6px 14px;cursor:pointer;white-space:nowrap;font-weight:500}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn{border:1px solid var(--fg);background:transparent;padding:7px 14px;cursor:pointer;font-weight:500}
+.btn:hover{background:var(--surface)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{filter:brightness(1.12)}
+.btn.ghost{border-color:var(--line)}
+.btn.danger{border-color:var(--ferrari);color:var(--ferrari-ink)}
+.btn.danger:hover{background:var(--ferrari-bg)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.sp{flex:1}
+.sync{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);white-space:nowrap}
+.sync i{width:8px;height:8px;background:var(--muted);display:inline-block}
+.sync[data-s="shared"] i{background:var(--accent-ink)}
+
+/* Seções */
+section{padding-block:40px 8px;scroll-margin-top:64px}
+.eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:500;color:var(--accent-ink)}
+h2{font-size:clamp(24px,3vw,32px);font-weight:800;letter-spacing:-.02em;margin-top:6px;text-wrap:balance}
+.lead{color:var(--muted);margin-top:8px;max-width:70ch}
+.points{margin-top:18px;display:grid;gap:10px;max-width:92ch}
+.points li{padding-left:18px;position:relative}
+.points li::before{content:"";position:absolute;left:0;top:.6em;width:8px;height:8px;background:var(--accent)}
+
+/* Visão global */
+.global{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:32px;margin-top:22px}
+.strip{display:flex;align-items:flex-end;gap:6px;overflow-x:auto;padding-bottom:6px}
+.wcol{flex:1 0 46px;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:4px 0;cursor:pointer}
+.wcol .n{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;min-height:18px}
+.wcol .stack{display:flex;flex-direction:column;justify-content:flex-end;height:120px;width:100%}
+.wcol .d{background:var(--bar);width:100%}
+.wcol .a{border:1px dashed var(--accent-ink);border-bottom:0;width:100%}
+.wcol.foc .d{background:var(--accent)}
+.wcol .l{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.wcol.foc .l{color:var(--accent-ink);font-weight:700}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:-1px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;font-weight:500;color:var(--muted);letter-spacing:.04em}
+td.num,th.num{text-align:right}
+
+/* Quadro: um callout por analista, semanas em linha horizontal */
+.board{margin-top:18px;display:grid;gap:22px}
+.callout{border:1px solid var(--line);border-left:6px solid var(--accent);background:var(--bg)}
+.co-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;padding:14px 18px;background:var(--surface);border-bottom:1px solid var(--line)}
+.co-head b{font-size:22px;font-weight:800;letter-spacing:-.01em}
+.co-head small{color:var(--muted);font-size:13px}
+.co-head .co-n{margin-left:auto;font-variant-numeric:tabular-nums;font-size:13px;color:var(--accent-ink);font-weight:700}
+.weeks{display:flex;overflow-x:auto;overscroll-behavior-x:contain}
+.wk-col{flex:0 0 var(--col-o);width:var(--col-o);display:flex;flex-direction:column;border-right:1px solid var(--line)}
+.wk-col.foc{flex-basis:var(--col-f);width:var(--col-f)}
+.wh{background:var(--surface);border-bottom:1px solid var(--line);padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.wh.foc{background:var(--accent);color:var(--on-accent)}
+.wh .wk{font-weight:700;font-variant-numeric:tabular-nums}
+.wh .sl{font-size:11px;letter-spacing:.08em;opacity:.8}
+.wh .bd{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.cell{padding:8px;flex:1;min-height:84px}
+.cell.foc{background:var(--focus)}
+.cards{display:flex;flex-direction:column;gap:6px}
+.none{color:var(--muted);padding:2px 4px}
+.mc{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:0 6px;background:var(--card);border:1px solid var(--line);padding:8px 8px 8px 10px}
+.mc-main{display:grid;gap:3px;text-align:left;background:none;border:0;padding:0;cursor:pointer;min-width:0}
+.ck{width:26px;height:26px;border:1px solid var(--fg);background:transparent;cursor:pointer;display:grid;place-items:center;font-size:15px;line-height:1;color:transparent;padding:0}
+.ck:hover{color:var(--muted)}
+.ck[aria-pressed="true"]{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+.mc .lk{grid-column:1/-1;margin-top:4px}
+.mc.is-cop{border-style:dashed;background:transparent}
+.mc.is-cop .nm>span:first-child{font-weight:500}
+.mc.st-realizada .wn{color:var(--muted)}
+.mc:hover{border-color:var(--fg)}
+.mc.st-hoje{border:2px solid var(--accent-ink);padding:7px 7px 7px 9px}
+.mc .nm{font-weight:700;display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center}
+.mc .wn{font-variant-numeric:tabular-nums;font-size:13px}
+.mc .ft{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;font-size:12px;color:var(--muted)}
+.mc a{color:var(--accent-ink);font-size:12px}
+.mc.offb{border-color:var(--warn);background:var(--warn-bg);border-width:2px;padding:7px 7px 7px 9px}
+.tg.off{background:var(--warn);color:var(--warn-bg);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.mc.st-cancelada{border-color:var(--ferrari);background:var(--ferrari-bg)}
+.mc.st-cancelada .nm>span:first-child{text-decoration:line-through;color:var(--ferrari-ink)}
+.mc.st-cancelada .wn{text-decoration:line-through;color:var(--ferrari-ink)}
+.mc.st-cancelada .ft{color:var(--ferrari-ink)}
+.mc.st-cancelada .ck{display:none}
+.pill{font-size:11px;font-weight:700;letter-spacing:.04em;padding:1px 6px;border:1px solid var(--fg);white-space:nowrap}
+.pill.hoje{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.pill.agendar{border:1px dashed var(--accent-ink);color:var(--accent-ink)}
+.pill.passada{border-color:var(--line);color:var(--muted)}
+.pill.realizada{background:var(--fg);color:var(--bg)}
+.pill.cancelada{background:var(--ferrari);border-color:var(--ferrari);color:#fff}
+.pill.remarcada{border-color:var(--warn);color:var(--warn)}
+.tg{font-size:11px;font-weight:500;padding:1px 6px;background:var(--surface);color:var(--fg);white-space:nowrap}
+.tg.warn{background:var(--warn-bg);color:var(--warn)}
+.add{border:1px dashed var(--line);background:none;color:var(--muted);padding:5px;cursor:pointer;font-size:12px;opacity:0}
+.cell:hover .add,.cell:focus-within .add{opacity:1}
+.cell.foc .add{opacity:.9}
+.hint{font-size:12px;color:var(--muted);margin-top:8px}
+
+/* Riscos */
+.risks{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;margin-top:20px}
+.risk{border:1px solid var(--line);padding:16px 18px;display:grid;gap:10px;align-content:start}
+.risk h3{font-size:16px;font-weight:700;display:flex;gap:8px;align-items:baseline;justify-content:space-between}
+.risk h3 span{font-size:13px;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.risk .tag-h{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.risk li{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding-top:6px}
+.risk li span:last-child{color:var(--muted);text-align:right}
+.risk p{color:var(--muted);font-size:13px}
+.hist li{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;padding:8px 0;border-top:1px solid var(--line)}
+.hist time{color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}
+.src{display:grid;gap:10px;margin-top:16px;max-width:92ch}
+.src li{padding-left:18px;position:relative;color:var(--muted)}
+.src li::before{content:"";position:absolute;left:0;top:.65em;width:8px;height:2px;background:var(--fg)}
+.src li b{color:var(--fg);font-weight:700}
+footer{margin-top:48px;background:var(--ink);color:#fff}
+footer .wrap{padding-block:22px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-weight:300;font-size:12px}
+footer .tagline{font-size:11px}
+
+/* Gaveta de edição */
+.scrim{position:fixed;inset:0;background:rgba(20,20,20,.5);z-index:60;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--bg);border-left:2px solid var(--accent);z-index:70;transform:translateX(102%);transition:transform .22s;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+.drawer.on{transform:none}
+.drawer header{padding:18px 22px 12px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.drawer h3{font-size:20px;font-weight:800}
+.x{border:1px solid var(--line);background:none;width:36px;height:36px;cursor:pointer;font-size:18px;line-height:1}
+.dform{overflow:auto;padding:0 22px 16px;display:grid;gap:14px;align-content:start;flex:1}
+.f{display:grid;gap:4px}
+.f label{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.f input,.f select,.f textarea{border:1px solid var(--line);background:var(--bg);padding:9px 10px;width:100%;border-radius:0}
+.f textarea{min-height:84px;resize:vertical}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.note{background:var(--warn-bg);color:var(--warn);padding:10px 12px;font-size:13px}
+.note.cancel{background:var(--ferrari-bg);color:var(--ferrari-ink);border-left:3px solid var(--ferrari)}
+.risk.cancel{border-color:var(--ferrari)}
+.risk.cancel h3 span,.risk.cancel .tag-h{color:var(--ferrari-ink)}
+.origin{font-size:12px;color:var(--muted)}
+.dfoot{border-top:1px solid var(--line);padding:14px 22px calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.err{color:var(--warn);font-size:13px;min-height:18px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--fg);color:var(--bg);padding:10px 16px;z-index:90;opacity:0;pointer-events:none;transition:.2s;max-width:calc(100% - 32px)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:760px){
+  .bar{position:static}
+  section{scroll-margin-top:12px}
+  :root{--col-f:240px;--col-o:210px}
+  .global{grid-template-columns:minmax(0,1fr)}
+  .cover .wrap{gap:40px}
+    .hist li{grid-template-columns:1fr;gap:2px}
+  .drawer{top:auto;width:100%;max-height:92%;border-left:0;border-top:2px solid var(--accent);transform:translateY(102%)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div id="cover" class="cover"></div>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="chips" id="chips" role="group" aria-label="Filtrar por analista"></div>
+    <button class="btn ghost" id="b-focus">Ir para esta semana</button>
+    <span class="sp"></span>
+    <span class="sync" id="sync" data-s="wait"><i></i><span>Conectando</span></span>
+    <button class="btn primary" id="b-new">Nova reunião</button>
+  </div>
+</div>
+
+<main class="wrap">
+  <section id="resumo"></section>
+  <section id="global"></section>
+  <section id="detalhe">
+    <p class="eyebrow">Detalhamento</p>
+    <h2>Agenda por analista</h2>
+    <p class="lead">Cada analista tem o seu quadro, com as semanas na horizontal até a S1 de novembro. A semana atual e a próxima ficam destacadas em azul. Clique em uma reunião para editar data, horário, agenda, analista e status.</p>
+    <div class="board" id="board" aria-label="Agenda de reuniões por analista"></div>
+    <p class="hint" id="hint"></p>
+  </section>
+  <section id="riscos"></section>
+  <section id="historico"></section>
+  <section id="fontes"></section>
+</main>
+
+<footer><div class="wrap"><div class="sig"><b>UPFY</b>Marketing Digital</div><div class="tagline">Estratégia<br>Consultoria<br>Aceleração</div></div></footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-labelledby="d-title" role="dialog">
+  <header><div><h3 id="d-title">Reunião</h3><p class="origin" id="d-origin"></p></div><button class="x" id="d-x" aria-label="Fechar">×</button></header>
+  <form class="dform" id="dform" autocomplete="off">
+    <div class="note" id="d-note" hidden></div>
+    <div class="note cancel" id="d-cnote" hidden>Reunião cancelada: aparece em vermelho no quadro e sai das contagens.</div>
+    <div class="f"><label for="m-cliente">Cliente</label><input id="m-cliente" type="text" required></div>
+    <div class="two">
+      <div class="f"><label for="m-analista">Piloto (prioridade no agendamento)</label><select id="m-analista"></select></div>
+      <div class="f"><label for="m-copiloto">Copiloto (apoio)</label><select id="m-copiloto"></select></div>
+    </div>
+    <div class="two">
+      <div class="f"><label for="m-data">Data</label><input id="m-data" type="date"></div>
+      <div class="f"><label for="m-hora">Horário</label><input id="m-hora" type="time"></div>
+    </div>
+    <div class="f" id="f-semana"><label for="m-semana">Semana prevista (sem data definida)</label><select id="m-semana"></select></div>
+    <div class="f"><label for="m-status">Status</label><select id="m-status">
+      <option value="">Automático (pela data)</option><option value="realizada">Realizada (check)</option><option value="remarcada">Remarcada</option><option value="cancelada">Cancelada</option></select></div>
+    <div class="f"><label for="m-link">Link da agenda ou da chamada</label><input id="m-link" type="url" placeholder="https://"></div>
+    <div class="f"><label for="m-pauta">Pauta e observações</label><textarea id="m-pauta"></textarea></div>
+    <p class="err" id="d-err" role="alert"></p>
+  </form>
+  <div class="dfoot">
+    <button class="btn primary" id="d-save" type="button">Salvar</button>
+    <button class="btn ghost" id="d-clear" type="button">Limpar data</button>
+    <button class="btn ghost" id="d-revert" type="button" hidden>Voltar ao original</button>
+    <span class="sp"></span>
+    <button class="btn danger" id="d-cancel" type="button">Cancelar reunião</button>
+    <button class="btn ghost" id="d-del" type="button">Excluir</button>
+  </div>
+</aside>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+var BASE = [{"id": "alc-klein-shoes-2026-08-26", "cliente": "Klein Shoes", "analista": "Alcides", "copiloto": "", "data": "2026-08-26", "hora": "", "semana": "2026-08-24", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S4"}, {"id": "alc-klein-shoes-2026-09-15", "cliente": "Klein Shoes", "analista": "Alcides", "copiloto": "", "data": "2026-09-15", "hora": "", "semana": "2026-09-14", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S3"}, {"id": "alc-klein-shoes-s9", "cliente": "Klein Shoes", "analista": "Alcides", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-05", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S2"}, {"id": "alc-inspires-2026-09-10", "cliente": "Inspires", "analista": "Alcides", "copiloto": "", "data": "2026-09-10", "hora": "", "semana": "2026-09-07", "pauta": "", "nota": "Na tabela a data está na coluna SET • S1, mas 10/09 cai em outra semana. Posicionada pela data; confirmar.", "link": "", "status": "", "flags": ["divergencia"], "origem": "SET • S1"}, {"id": "alc-inspires-2026-09-24", "cliente": "Inspires", "analista": "Alcides", "copiloto": "", "data": "2026-09-24", "hora": "", "semana": "2026-09-21", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S4"}, {"id": "rit-casa-catarina-2026-08-12", "cliente": "Casa Catarina", "analista": "Rita", "copiloto": "", "data": "2026-08-12", "hora": "", "semana": "2026-08-10", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S2"}, {"id": "rit-casa-catarina-2026-09-03", "cliente": "Casa Catarina", "analista": "Rita", "copiloto": "", "data": "2026-09-03", "hora": "", "semana": "2026-08-31", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S1"}, {"id": "rit-casa-catarina-2026-09-29", "cliente": "Casa Catarina", "analista": "Rita", "copiloto": "", "data": "2026-09-29", "hora": "10:00", "semana": "2026-09-28", "pauta": "", "nota": "Horário conferido no print do Notion (30/09/2026).", "link": "", "status": "", "flags": ["notion"], "origem": "OUT • S1"}, {"id": "rit-casa-catarina-s10", "cliente": "Casa Catarina", "analista": "Rita", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-12", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S3"}, {"id": "rit-rainbow-2026-08-06", "cliente": "Rainbow", "analista": "Rita", "copiloto": "", "data": "2026-08-06", "hora": "", "semana": "2026-08-03", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S1"}, {"id": "rit-rainbow-2026-08-24", "cliente": "Rainbow", "analista": "Rita", "copiloto": "", "data": "2026-08-24", "hora": "", "semana": "2026-08-24", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S4"}, {"id": "rit-rainbow-2026-09-17", "cliente": "Rainbow", "analista": "Rita", "copiloto": "", "data": "2026-09-17", "hora": "", "semana": "2026-09-14", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S3"}, {"id": "rit-rainbow-s9", "cliente": "Rainbow", "analista": "Rita", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-05", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S2"}, {"id": "rit-strit-2026-08-18", "cliente": "Strit", "analista": "Rita", "copiloto": "", "data": "2026-08-18", "hora": "", "semana": "2026-08-17", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S3"}, {"id": "rit-strit-2026-09-08", "cliente": "Strit", "analista": "Rita", "copiloto": "", "data": "2026-09-08", "hora": "", "semana": "2026-09-07", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S2"}, {"id": "rit-strit-2026-09-30", "cliente": "Strit", "analista": "Rita", "copiloto": "", "data": "2026-09-30", "hora": "11:00", "semana": "2026-09-28", "pauta": "", "nota": "Horário conferido no print do Notion (30/09/2026).", "link": "", "status": "", "flags": ["notion"], "origem": "OUT • S1"}, {"id": "rit-soulmeet-2026-09-01", "cliente": "Soulmeet", "analista": "Rita", "copiloto": "", "data": "2026-09-01", "hora": "", "semana": "2026-08-31", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S1"}, {"id": "rit-soulmeet-2026-09-23", "cliente": "Soulmeet", "analista": "Rita", "copiloto": "", "data": "2026-09-23", "hora": "", "semana": "2026-09-21", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S4"}, {"id": "rit-soulmeet-s10", "cliente": "Soulmeet", "analista": "Rita", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-12", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S3"}, {"id": "rit-loja-da-manicure-2026-08-20", "cliente": "Loja da Manicure", "analista": "Rita", "copiloto": "", "data": "2026-08-20", "hora": "", "semana": "2026-08-17", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S3"}, {"id": "rit-loja-da-manicure-2026-09-09", "cliente": "Loja da Manicure", "analista": "Rita", "copiloto": "", "data": "2026-09-09", "hora": "", "semana": "2026-09-07", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S2"}, {"id": "rit-loja-da-manicure-2026-09-23", "cliente": "Loja da Manicure", "analista": "Rita", "copiloto": "", "data": "2026-09-23", "hora": "", "semana": "2026-09-21", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S4"}, {"id": "rit-betina-borges-2026-08-13", "cliente": "Betina Borges", "analista": "Rita", "copiloto": "", "data": "2026-08-13", "hora": "", "semana": "2026-08-10", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S2"}, {"id": "rit-betina-borges-2026-08-28", "cliente": "Betina Borges", "analista": "Rita", "copiloto": "", "data": "2026-08-28", "hora": "", "semana": "2026-08-24", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["destaque"], "origem": "AGO • S4"}, {"id": "rit-betina-borges-2026-09-22", "cliente": "Betina Borges", "analista": "Rita", "copiloto": "", "data": "2026-09-22", "hora": "", "semana": "2026-09-21", "pauta": "", "nota": "Na tabela a data está na coluna SET • S3, mas 22/09 cai em outra semana. Posicionada pela data; confirmar.", "link": "", "status": "", "flags": ["divergencia"], "origem": "SET • S3"}, {"id": "rit-betina-borges-2026-10-06", "cliente": "Betina Borges", "analista": "Rita", "copiloto": "", "data": "2026-10-06", "hora": "14:00", "semana": "2026-10-05", "pauta": "", "nota": "Horário conferido no print do Notion (30/09/2026).", "link": "", "status": "", "flags": ["notion"], "origem": "OUT • S2"}, {"id": "mat-amanda-dombroski-2026-08-11", "cliente": "Amanda Dombroski", "analista": "Mateus", "copiloto": "", "data": "2026-08-11", "hora": "", "semana": "2026-08-10", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S2"}, {"id": "mat-amanda-dombroski-2026-09-10", "cliente": "Amanda Dombroski", "analista": "Mateus", "copiloto": "", "data": "2026-09-10", "hora": "", "semana": "2026-09-07", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S2"}, {"id": "mat-amanda-dombroski-2026-09-29", "cliente": "Amanda Dombroski", "analista": "Mateus", "copiloto": "", "data": "2026-09-29", "hora": "11:00", "semana": "2026-09-28", "pauta": "", "nota": "Horário conferido no print do Notion (30/09/2026).", "link": "", "status": "", "flags": ["notion"], "origem": "OUT • S1"}, {"id": "mat-brull-2026-08-04", "cliente": "Brull", "analista": "Mateus", "copiloto": "", "data": "2026-08-04", "hora": "", "semana": "2026-08-03", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S1"}, {"id": "mat-brull-2026-09-08", "cliente": "Brull", "analista": "Mateus", "copiloto": "", "data": "2026-09-08", "hora": "", "semana": "2026-09-07", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S2"}, {"id": "mat-brull-2026-10-01", "cliente": "Brull", "analista": "Mateus", "copiloto": "", "data": "2026-10-01", "hora": "14:00", "semana": "2026-09-28", "pauta": "", "nota": "Horário conferido no print do Notion (30/09/2026).", "link": "", "status": "", "flags": ["notion"], "origem": "OUT • S1"}, {"id": "mat-brull-s10", "cliente": "Brull", "analista": "Mateus", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-12", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S3"}, {"id": "mat-doce-trama-2026-08-05", "cliente": "Doce Trama", "analista": "Mateus", "copiloto": "", "data": "2026-08-05", "hora": "", "semana": "2026-08-03", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["offboarding"], "origem": "AGO • S1"}, {"id": "mat-doce-trama-2026-08-27", "cliente": "Doce Trama", "analista": "Mateus", "copiloto": "", "data": "2026-08-27", "hora": "", "semana": "2026-08-24", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["offboarding"], "origem": "AGO • S4"}, {"id": "mat-doce-trama-2026-09-17", "cliente": "Doce Trama", "analista": "Mateus", "copiloto": "", "data": "2026-09-17", "hora": "", "semana": "2026-09-14", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["offboarding"], "origem": "SET • S3"}, {"id": "mat-doce-trama-s9", "cliente": "Doce Trama", "analista": "Mateus", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-05", "pauta": "", "nota": "Reunião cancelada. Cliente em offboarding.", "link": "", "status": "cancelada", "flags": ["offboarding"], "origem": "OUT • S2"}, {"id": "mat-lulo-shoes-2026-08-13", "cliente": "Lulo Shoes", "analista": "Mateus", "copiloto": "", "data": "2026-08-13", "hora": "", "semana": "2026-08-10", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S2"}, {"id": "mat-lulo-shoes-2026-09-09", "cliente": "Lulo Shoes", "analista": "Mateus", "copiloto": "", "data": "2026-09-09", "hora": "", "semana": "2026-09-07", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S2"}, {"id": "mat-lulo-shoes-2026-09-30", "cliente": "Lulo Shoes", "analista": "Mateus", "copiloto": "", "data": "2026-09-30", "hora": "11:00", "semana": "2026-09-28", "pauta": "", "nota": "Horário conferido no print do Notion (30/09/2026).", "link": "", "status": "", "flags": ["notion"], "origem": "OUT • S1"}, {"id": "mat-pixol--2026-08-19", "cliente": "Pixolé", "analista": "Mateus", "copiloto": "", "data": "2026-08-19", "hora": "", "semana": "2026-08-17", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["offboarding"], "origem": "AGO • S3"}, {"id": "mat-pixol--2026-09-03", "cliente": "Pixolé", "analista": "Mateus", "copiloto": "", "data": "2026-09-03", "hora": "", "semana": "2026-08-31", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["offboarding"], "origem": "SET • S1"}, {"id": "mat-pixol--2026-09-23", "cliente": "Pixolé", "analista": "Mateus", "copiloto": "", "data": "2026-09-23", "hora": "", "semana": "2026-09-21", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["offboarding"], "origem": "SET • S4"}, {"id": "mat-pixol--s10", "cliente": "Pixolé", "analista": "Mateus", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-12", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["offboarding"], "origem": "OUT • S3"}, {"id": "mat-sofie-2026-08-06", "cliente": "Sofie", "analista": "Mateus", "copiloto": "", "data": "2026-08-06", "hora": "", "semana": "2026-08-03", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S1"}, {"id": "mat-sofie-2026-08-25", "cliente": "Sofie", "analista": "Mateus", "copiloto": "", "data": "2026-08-25", "hora": "", "semana": "2026-08-24", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S4"}, {"id": "mat-sofie-2026-09-17", "cliente": "Sofie", "analista": "Mateus", "copiloto": "", "data": "2026-09-17", "hora": "", "semana": "2026-09-14", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S3"}, {"id": "mat-sofie-s9", "cliente": "Sofie", "analista": "Mateus", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-05", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S2"}, {"id": "mat-tita-feminina-2026-08-05", "cliente": "Tita Feminina", "analista": "Mateus", "copiloto": "", "data": "2026-08-05", "hora": "", "semana": "2026-08-03", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S1"}, {"id": "mat-tita-feminina-2026-08-25", "cliente": "Tita Feminina", "analista": "Mateus", "copiloto": "", "data": "2026-08-25", "hora": "", "semana": "2026-08-24", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S4"}, {"id": "mat-tita-feminina-2026-09-22", "cliente": "Tita Feminina", "analista": "Mateus", "copiloto": "", "data": "2026-09-22", "hora": "", "semana": "2026-09-21", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S4"}, {"id": "mat-tita-feminina-s10", "cliente": "Tita Feminina", "analista": "Mateus", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-12", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S3"}, {"id": "mat-pele-rosada-2026-08-06", "cliente": "Pele Rosada", "analista": "Mateus", "copiloto": "", "data": "2026-08-06", "hora": "", "semana": "2026-08-03", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S1"}, {"id": "mat-pele-rosada-2026-08-27", "cliente": "Pele Rosada", "analista": "Mateus", "copiloto": "", "data": "2026-08-27", "hora": "", "semana": "2026-08-24", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S4"}, {"id": "mat-pele-rosada-2026-09-16", "cliente": "Pele Rosada", "analista": "Mateus", "copiloto": "", "data": "2026-09-16", "hora": "", "semana": "2026-09-14", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S3"}, {"id": "mat-pele-rosada-s9", "cliente": "Pele Rosada", "analista": "Mateus", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-05", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S2"}, {"id": "mat-duppla-2026-08-06", "cliente": "Duppla", "analista": "Alcides", "copiloto": "", "data": "2026-08-06", "hora": "", "semana": "2026-08-03", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S1"}, {"id": "mat-duppla-2026-08-27", "cliente": "Duppla", "analista": "Alcides", "copiloto": "", "data": "2026-08-27", "hora": "", "semana": "2026-08-24", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S4"}, {"id": "mat-duppla-2026-09-15", "cliente": "Duppla", "analista": "Alcides", "copiloto": "", "data": "2026-09-15", "hora": "", "semana": "2026-09-14", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S3"}, {"id": "mat-duppla-s9", "cliente": "Duppla", "analista": "Alcides", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-05", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S2"}, {"id": "fel-aura-luz-2026-08-26", "cliente": "Aura Luz", "analista": "Felix", "copiloto": "", "data": "2026-08-26", "hora": "", "semana": "2026-08-24", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S4"}, {"id": "fel-aura-luz-2026-09-17", "cliente": "Aura Luz", "analista": "Felix", "copiloto": "", "data": "2026-09-17", "hora": "", "semana": "2026-09-14", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S3"}, {"id": "fel-aura-luz-s9", "cliente": "Aura Luz", "analista": "Felix", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-05", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S2"}, {"id": "fel-femmine-shoes-2026-08-04", "cliente": "Femmine Shoes", "analista": "Felix", "copiloto": "", "data": "2026-08-04", "hora": "", "semana": "2026-08-03", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["piloto"], "origem": "AGO • S1"}, {"id": "fel-femmine-shoes-2026-08-27", "cliente": "Femmine Shoes", "analista": "Felix", "copiloto": "", "data": "2026-08-27", "hora": "", "semana": "2026-08-24", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["piloto"], "origem": "AGO • S4"}, {"id": "fel-femmine-shoes-2026-09-15", "cliente": "Femmine Shoes", "analista": "Felix", "copiloto": "", "data": "2026-09-15", "hora": "", "semana": "2026-09-14", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["piloto"], "origem": "SET • S3"}, {"id": "fel-femmine-shoes-s9", "cliente": "Femmine Shoes", "analista": "Felix", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-05", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["piloto"], "origem": "OUT • S2"}, {"id": "fel-lislu-2026-08-18", "cliente": "Lislu", "analista": "Felix", "copiloto": "", "data": "2026-08-18", "hora": "", "semana": "2026-08-17", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S3"}, {"id": "fel-lislu-2026-09-09", "cliente": "Lislu", "analista": "Felix", "copiloto": "", "data": "2026-09-09", "hora": "", "semana": "2026-09-07", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S2"}, {"id": "fel-lislu-2026-09-29", "cliente": "Lislu", "analista": "Felix", "copiloto": "", "data": "2026-09-29", "hora": "11:00", "semana": "2026-09-28", "pauta": "", "nota": "Horário conferido no print do Notion (30/09/2026).", "link": "", "status": "", "flags": ["notion"], "origem": "OUT • S1"}, {"id": "fel-lislu-s11", "cliente": "Lislu", "analista": "Felix", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-19", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S4"}, {"id": "fel-lohaz-2026-08-04", "cliente": "Lohaz", "analista": "Felix", "copiloto": "", "data": "2026-08-04", "hora": "", "semana": "2026-08-03", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["piloto"], "origem": "AGO • S1"}, {"id": "fel-lohaz-2026-09-10", "cliente": "Lohaz", "analista": "Felix", "copiloto": "", "data": "2026-09-10", "hora": "", "semana": "2026-09-07", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["piloto"], "origem": "SET • S2"}, {"id": "fel-villa-florence-2026-08-11", "cliente": "Villa Florence", "analista": "Felix", "copiloto": "", "data": "2026-08-11", "hora": "", "semana": "2026-08-10", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S2"}, {"id": "fel-villa-florence-2026-09-03", "cliente": "Villa Florence", "analista": "Felix", "copiloto": "", "data": "2026-09-03", "hora": "", "semana": "2026-08-31", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S1"}, {"id": "fel-villa-florence-2026-09-22", "cliente": "Villa Florence", "analista": "Felix", "copiloto": "", "data": "2026-09-22", "hora": "", "semana": "2026-09-21", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S4"}, {"id": "fel-villa-florence-s10", "cliente": "Villa Florence", "analista": "Felix", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-12", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S3"}, {"id": "fel-charme-perfumaria-2026-08-20", "cliente": "Charme Perfumaria", "analista": "Felix", "copiloto": "", "data": "2026-08-20", "hora": "", "semana": "2026-08-17", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S3"}, {"id": "fel-charme-perfumaria-2026-09-09", "cliente": "Charme Perfumaria", "analista": "Felix", "copiloto": "", "data": "2026-09-09", "hora": "", "semana": "2026-09-07", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S2"}, {"id": "fel-charme-perfumaria-2026-09-30", "cliente": "Charme Perfumaria", "analista": "Felix", "copiloto": "", "data": "2026-09-30", "hora": "11:00", "semana": "2026-09-28", "pauta": "", "nota": "Horário conferido no print do Notion (30/09/2026).", "link": "", "status": "", "flags": ["notion"], "origem": "OUT • S1"}, {"id": "fel-charme-perfumaria-s11", "cliente": "Charme Perfumaria", "analista": "Felix", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-19", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S4"}, {"id": "fel-moouve-2026-08-11", "cliente": "Moouve", "analista": "Felix", "copiloto": "", "data": "2026-08-11", "hora": "", "semana": "2026-08-10", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["novo"], "origem": "AGO • S2"}, {"id": "fel-moouve-2026-09-03", "cliente": "Moouve", "analista": "Felix", "copiloto": "", "data": "2026-09-03", "hora": "", "semana": "2026-08-31", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["novo"], "origem": "SET • S1"}, {"id": "fel-moouve-2026-09-30", "cliente": "Moouve", "analista": "Felix", "copiloto": "", "data": "2026-10-06", "hora": "10:00", "semana": "2026-10-05", "pauta": "", "nota": "Na tabela estava em 30/09. No print do Notion aparece em 06/10 às 10:00 e não há Moouve em 30/09.", "link": "", "status": "", "flags": ["notion", "novo"], "origem": "OUT • S1"}, {"id": "bru-carol-bolina-2026-08-28", "cliente": "Carol Bolina", "analista": "Bruno", "copiloto": "", "data": "2026-08-28", "hora": "", "semana": "2026-08-24", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S4"}, {"id": "bru-carol-bolina-2026-09-22", "cliente": "Carol Bolina", "analista": "Bruno", "copiloto": "", "data": "2026-09-22", "hora": "", "semana": "2026-09-21", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S4"}, {"id": "bru-carol-bolina-s9", "cliente": "Carol Bolina", "analista": "Bruno", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-05", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S2"}, {"id": "bru-di-fleuri-2026-08-26", "cliente": "Di Fleuri", "analista": "Bruno", "copiloto": "", "data": "2026-08-26", "hora": "", "semana": "2026-08-24", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S4"}, {"id": "bru-di-fleuri-2026-09-23", "cliente": "Di Fleuri", "analista": "Bruno", "copiloto": "", "data": "2026-09-23", "hora": "", "semana": "2026-09-21", "pauta": "", "nota": "Na tabela a data está na coluna SET • S3, mas 23/09 cai em outra semana. Posicionada pela data; confirmar.", "link": "", "status": "", "flags": ["divergencia"], "origem": "SET • S3"}, {"id": "bru-elaz-2026-08-19", "cliente": "Elaz", "analista": "Bruno", "copiloto": "", "data": "2026-08-19", "hora": "", "semana": "2026-08-17", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S3"}, {"id": "bru-elaz-2026-09-10", "cliente": "Elaz", "analista": "Bruno", "copiloto": "", "data": "2026-09-10", "hora": "", "semana": "2026-09-07", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S2"}, {"id": "bru-elaz-2026-10-01", "cliente": "Elaz", "analista": "Bruno", "copiloto": "", "data": "2026-10-01", "hora": "10:00", "semana": "2026-09-28", "pauta": "", "nota": "Horário conferido no print do Notion (30/09/2026).", "link": "", "status": "", "flags": ["notion"], "origem": "OUT • S1"}, {"id": "bru-elaz-s11", "cliente": "Elaz", "analista": "Bruno", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-19", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S4"}, {"id": "bru-guilhermina-de-paula-2026-08-11", "cliente": "Guilhermina de Paula", "analista": "Bruno", "copiloto": "", "data": "2026-08-11", "hora": "", "semana": "2026-08-10", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S2"}, {"id": "bru-guilhermina-de-paula-2026-09-01", "cliente": "Guilhermina de Paula", "analista": "Bruno", "copiloto": "", "data": "2026-09-01", "hora": "", "semana": "2026-08-31", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S1"}, {"id": "bru-guilhermina-de-paula-2026-09-18", "cliente": "Guilhermina de Paula", "analista": "Bruno", "copiloto": "", "data": "2026-09-18", "hora": "", "semana": "2026-09-14", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S3"}, {"id": "bru-jaque-bontorin-2026-08-05", "cliente": "Jaque Bontorin", "analista": "Bruno", "copiloto": "", "data": "2026-08-05", "hora": "", "semana": "2026-08-03", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S1"}, {"id": "bru-petit-ros--2026-08-11", "cliente": "Petit Rosè", "analista": "Bruno", "copiloto": "", "data": "2026-08-11", "hora": "", "semana": "2026-08-10", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "AGO • S2"}, {"id": "bru-petit-ros--2026-09-10", "cliente": "Petit Rosè", "analista": "Bruno", "copiloto": "", "data": "2026-09-10", "hora": "", "semana": "2026-09-07", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S2"}, {"id": "bru-petit-ros--2026-09-24", "cliente": "Petit Rosè", "analista": "Bruno", "copiloto": "", "data": "2026-09-24", "hora": "", "semana": "2026-09-21", "pauta": "", "nota": "Na tabela a data está na coluna OUT • S1, mas 24/09 cai em outra semana. Posicionada pela data; confirmar.", "link": "", "status": "", "flags": ["divergencia"], "origem": "OUT • S1"}, {"id": "bru-petit-ros--s11", "cliente": "Petit Rosè", "analista": "Bruno", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-19", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S4"}, {"id": "bru-vivano-sports-2026-09-16", "cliente": "Vivano Sports", "analista": "Bruno", "copiloto": "", "data": "2026-09-16", "hora": "", "semana": "2026-09-14", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S3"}, {"id": "bru-vivano-sports-s9", "cliente": "Vivano Sports", "analista": "Bruno", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-05", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S2"}, {"id": "bru-elira-2026-09-15", "cliente": "Elira", "analista": "Bruno", "copiloto": "Alcides", "data": "2026-09-15", "hora": "", "semana": "2026-09-14", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "SET • S3"}, {"id": "bru-elira-s9", "cliente": "Elira", "analista": "Bruno", "copiloto": "Alcides", "data": "", "hora": "", "semana": "2026-10-05", "pauta": "", "nota": "", "link": "", "status": "", "flags": [], "origem": "OUT • S2"}, {"id": "bru-beyou-shoes-2026-08-19", "cliente": "BeYou Shoes", "analista": "Alcides", "copiloto": "", "data": "2026-08-19", "hora": "", "semana": "2026-08-17", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["novo"], "origem": "AGO • S3"}, {"id": "bru-beyou-shoes-2026-09-09", "cliente": "BeYou Shoes", "analista": "Alcides", "copiloto": "", "data": "2026-09-09", "hora": "", "semana": "2026-09-07", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["novo"], "origem": "SET • S2"}, {"id": "bru-beyou-shoes-s8", "cliente": "BeYou Shoes", "analista": "Alcides", "copiloto": "", "data": "", "hora": "", "semana": "2026-09-28", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["novo"], "origem": "OUT • S1"}, {"id": "jul-rit-strit-07-09", "cliente": "Strit", "analista": "Rita", "copiloto": "", "data": "2026-07-09", "hora": "10:00", "semana": "2026-07-06", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-rit-rainbow-07-14", "cliente": "Rainbow", "analista": "Rita", "copiloto": "", "data": "2026-07-14", "hora": "15:00", "semana": "2026-07-13", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-rit-casa-catarina-07-21", "cliente": "Casa Catarina", "analista": "Rita", "copiloto": "", "data": "2026-07-21", "hora": "", "semana": "2026-07-20", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-rit-strit-07-23", "cliente": "Strit", "analista": "Rita", "copiloto": "", "data": "2026-07-23", "hora": "", "semana": "2026-07-20", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-mat-pixol--07-01", "cliente": "Pixolé", "analista": "Mateus", "copiloto": "", "data": "2026-07-01", "hora": "", "semana": "2026-06-29", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho", "offboarding"], "origem": "Lista de julho"}, {"id": "jul-mat-lulo-shoes-07-02", "cliente": "Lulo Shoes", "analista": "Mateus", "copiloto": "", "data": "2026-07-02", "hora": "", "semana": "2026-06-29", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-mat-brull-07-09", "cliente": "Brull", "analista": "Mateus", "copiloto": "", "data": "2026-07-09", "hora": "15:00", "semana": "2026-07-06", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-mat-doce-trama-07-09", "cliente": "Doce Trama", "analista": "Mateus", "copiloto": "", "data": "2026-07-09", "hora": "", "semana": "2026-07-06", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho", "offboarding"], "origem": "Lista de julho"}, {"id": "jul-mat-tita-feminina-07-14", "cliente": "Tita Feminina", "analista": "Mateus", "copiloto": "", "data": "2026-07-14", "hora": "", "semana": "2026-07-13", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-mat-amanda-dombroski-07-15", "cliente": "Amanda Dombroski", "analista": "Mateus", "copiloto": "", "data": "2026-07-15", "hora": "10:00", "semana": "2026-07-13", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-mat-pixol--07-15", "cliente": "Pixolé", "analista": "Mateus", "copiloto": "", "data": "2026-07-15", "hora": "", "semana": "2026-07-13", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho", "offboarding"], "origem": "Lista de julho"}, {"id": "jul-mat-pele-rosada-07-15", "cliente": "Pele Rosada", "analista": "Mateus", "copiloto": "", "data": "2026-07-15", "hora": "", "semana": "2026-07-13", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-mat-sofie-07-21", "cliente": "Sofie", "analista": "Mateus", "copiloto": "", "data": "2026-07-21", "hora": "", "semana": "2026-07-20", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-mat-lulo-shoes-07-23", "cliente": "Lulo Shoes", "analista": "Mateus", "copiloto": "", "data": "2026-07-23", "hora": "", "semana": "2026-07-20", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-mat-pixol--07-29", "cliente": "Pixolé", "analista": "Mateus", "copiloto": "", "data": "2026-07-29", "hora": "", "semana": "2026-07-27", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho", "offboarding"], "origem": "Lista de julho"}, {"id": "jul-fel-coisas-de-cabide-07-16", "cliente": "Coisas de Cabide", "analista": "Felix", "copiloto": "", "data": "2026-07-16", "hora": "", "semana": "2026-07-13", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-fel-femmine-shoes-07-16", "cliente": "Femmine Shoes", "analista": "Felix", "copiloto": "", "data": "2026-07-16", "hora": "", "semana": "2026-07-13", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-fel-ph-laboratories-07-23", "cliente": "PH Laboratories", "analista": "Felix", "copiloto": "", "data": "2026-07-23", "hora": "", "semana": "2026-07-20", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-fel-previa-07-23", "cliente": "Previa", "analista": "Felix", "copiloto": "", "data": "2026-07-23", "hora": "", "semana": "2026-07-20", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-fel-lislu-07-29", "cliente": "Lislu", "analista": "Felix", "copiloto": "", "data": "2026-07-29", "hora": "", "semana": "2026-07-27", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-fel-aura-luz-07-29", "cliente": "Aura Luz", "analista": "Felix", "copiloto": "", "data": "2026-07-29", "hora": "", "semana": "2026-07-27", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-fel-coisas-de-cabide-07-30", "cliente": "Coisas de Cabide", "analista": "Felix", "copiloto": "", "data": "2026-07-30", "hora": "", "semana": "2026-07-27", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-fel-charme-perfumaria-07-30", "cliente": "Charme Perfumaria", "analista": "Felix", "copiloto": "", "data": "2026-07-30", "hora": "", "semana": "2026-07-27", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-bru-carol-bolina-07-16", "cliente": "Carol Bolina", "analista": "Bruno", "copiloto": "", "data": "2026-07-16", "hora": "", "semana": "2026-07-13", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-bru-guilhermina-de-paula-07-22", "cliente": "Guilhermina de Paula", "analista": "Bruno", "copiloto": "", "data": "2026-07-22", "hora": "", "semana": "2026-07-20", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-bru-betina-borges-07-28", "cliente": "Betina Borges", "analista": "Rita", "copiloto": "", "data": "2026-07-28", "hora": "", "semana": "2026-07-27", "pauta": "", "nota": "Listada em julho com o Bruno; nas tabelas de ago a out a carteira está com a Rita.", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-bru-elaz-07-28", "cliente": "Elaz", "analista": "Bruno", "copiloto": "Felix", "data": "2026-07-28", "hora": "", "semana": "2026-07-27", "pauta": "", "nota": "Aparece nas listas de julho do Felix e do Bruno (contada uma vez). O papel do Felix nesta reunião não está confirmado.", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-bru-di-fleuri-07-29", "cliente": "Di Fleuri", "analista": "Bruno", "copiloto": "", "data": "2026-07-29", "hora": "", "semana": "2026-07-27", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-bru-vivano-sports-07-29", "cliente": "Vivano Sports", "analista": "Bruno", "copiloto": "", "data": "2026-07-29", "hora": "", "semana": "2026-07-27", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "jul-bru-carol-bolina-07-31", "cliente": "Carol Bolina", "analista": "Bruno", "copiloto": "", "data": "2026-07-31", "hora": "", "semana": "2026-07-27", "pauta": "", "nota": "", "link": "", "status": "", "flags": ["julho"], "origem": "Lista de julho"}, {"id": "n-print-carol-0929", "cliente": "Carol Bolina", "analista": "Bruno", "copiloto": "", "data": "2026-09-29", "hora": "10:00", "semana": "2026-09-28", "pauta": "", "nota": "Reunião que está no Notion mas não constava na tabela.", "link": "", "status": "", "flags": ["notion"], "origem": "Print do Notion"}, {"id": "n-print-pixole-0930", "cliente": "Pixolé", "analista": "Mateus", "copiloto": "", "data": "2026-09-30", "hora": "14:00", "semana": "2026-09-28", "pauta": "", "nota": "Reunião que está no Notion mas não constava na tabela.", "link": "", "status": "", "flags": ["notion", "offboarding"], "origem": "Print do Notion"}, {"id": "alc-mariza-dias-s9", "cliente": "Mariza Dias", "analista": "Alcides", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-05", "pauta": "", "nota": "Cliente adicionado pela lista de pilotos. Sem data na tabela: vaga a agendar.", "link": "", "status": "", "flags": ["novo"], "origem": "Lista de pilotos"}, {"id": "alc-voa-fitness-s9", "cliente": "Voa Fitness", "analista": "Alcides", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-05", "pauta": "", "nota": "Cliente adicionado pela lista de pilotos. Sem data na tabela: vaga a agendar.", "link": "", "status": "", "flags": ["novo"], "origem": "Lista de pilotos"}, {"id": "rit-briges-s9", "cliente": "Briges", "analista": "Rita", "copiloto": "", "data": "", "hora": "", "semana": "2026-10-05", "pauta": "", "nota": "Cliente adicionado pela lista de pilotos. Sem data na tabela: vaga a agendar.", "link": "", "status": "", "flags": ["novo"], "origem": "Lista de pilotos"}];
+var REPORT = [["Elaz", "Bruno", "01/10, sem horário", "01/10 às 10:00"], ["Charme Perfumaria", "Felix", "30/09, sem horário", "30/09 às 11:00"], ["Lislu", "Felix", "29/09, sem horário", "29/09 às 11:00"], ["Moouve", "Felix", "30/09 (tabela)", "06/10 às 10:00"], ["Amanda Dombroski", "Mateus", "29/09, sem horário", "29/09 às 11:00"], ["Brull", "Mateus", "01/10, sem horário", "01/10 às 14:00"], ["Lulo Shoes", "Mateus", "30/09, sem horário", "30/09 às 11:00"], ["Carol Bolina", "Bruno", "não constava na tabela", "29/09 às 10:00 (nova)"], ["Pixolé", "Mateus", "não constava na tabela", "30/09 às 14:00 (nova)"], ["Betina Borges", "Rita", "06/10, sem horário", "06/10 às 14:00"], ["Casa Catarina", "Rita", "29/09, sem horário", "29/09 às 10:00"], ["Strit", "Rita", "30/09, sem horário", "30/09 às 11:00"]];
+var ANALISTAS = ["Alcides","Rita","Mateus","Felix","Bruno"];
+var PAPEL = {Alcides:"Copiloto de Elira",Rita:"",Mateus:"",Felix:"",Bruno:""};
+var START = "2026-08-03";
+var END = "2026-11-02";
+var LSKEY = "upfy-mapa-reunioes-v1";
+
+/* ---------- datas ---------- */
+function pad(n){return String(n).padStart(2,"0")}
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function parse(s){var p=s.split("-").map(Number);return new Date(p[0],p[1]-1,p[2])}
+function addDays(s,n){var d=parse(s);d.setDate(d.getDate()+n);return iso(d)}
+function monday(s){var d=parse(s);d.setDate(d.getDate()-((d.getDay()+6)%7));return iso(d)}
+function fmt(s){return s.slice(8,10)+"/"+s.slice(5,7)}
+var WD=["dom","seg","ter","qua","qui","sex","sáb"];
+function wd(s){return WD[parse(s).getDay()]}
+var MES=["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+function slot(mon){var t=parse(addDays(mon,3));return MES[t.getMonth()]+" · S"+Math.ceil(t.getDate()/7)}
+function days(a,b){return Math.round((parse(b)-parse(a))/864e5)}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function list(a){a=a.slice();if(a.length<2)return a.join("");return a.slice(0,-1).join(", ")+" e "+a[a.length-1]}
+var TODAY = iso(new Date());
+
+/* ---------- estado ---------- */
+var overrides = {};
+var hist = [];
+var DB = null, USER = null, UID = "", RO = false, mode = "wait";
+var filter = "Todos";
+var editing = null, preset = null, delArmed = false, drawerOpen = false;
+var baseMap = {}; BASE.forEach(function(b){baseMap[b.id]=b});
+
+function loadLocal(){try{var r=JSON.parse(localStorage.getItem(LSKEY)||"null");if(r){overrides=r.overrides||{};hist=r.hist||[]}}catch(e){}}
+function saveLocal(){try{localStorage.setItem(LSKEY,JSON.stringify({overrides:overrides,hist:hist.slice(0,60)}))}catch(e){}}
+
+function meetings(includeRemoved){
+  var map={},id;
+  BASE.forEach(function(b){map[b.id]=b});
+  for(id in overrides){map[id]=Object.assign({},map[id]||{},overrides[id])}
+  return Object.keys(map).map(function(k){return map[k]}).filter(function(m){return includeRemoved||!m.removida});
+}
+function weekOf(m){return m.data?monday(m.data):m.semana}
+function colOf(m){var w=weekOf(m);return w<START?"jul":w}
+function status(m){
+  if(m.status==="realizada"||m.status==="remarcada"||m.status==="cancelada")return m.status;
+  if(!m.data)return "agendar";
+  if(m.data<TODAY)return "passada"; if(m.data===TODAY)return "hoje"; return "agendada";
+}
+var SL={agendar:"A agendar",passada:"Data passada",hoje:"Hoje",agendada:"Agendada",realizada:"Realizada",remarcada:"Remarcada",cancelada:"Cancelada"};
+function active(m){return m.status!=="cancelada"&&m.status!=="remarcada"}
+function byDate(a,b){return (a.data||"9").localeCompare(b.data||"9")||(a.hora||"").localeCompare(b.hora||"")||a.cliente.localeCompare(b.cliente)}
+
+function computeCols(ms){
+  var cur=monday(TODAY),nxt=addDays(cur,7),last=END,cols=[],w;
+  ms.forEach(function(m){var x=weekOf(m);if(x>last)last=x});
+  if(nxt>last)last=nxt;
+  if(ms.some(function(m){return colOf(m)==="jul"}))cols.push({key:"jul",label:"Até julho",sl:"HISTÓRICO"});
+  for(w=START;w<=last;w=addDays(w,7))cols.push({key:w,label:fmt(w)+" a "+fmt(addDays(w,6)),sl:slot(w),focus:w===cur||w===addDays(cur,7),cur:w===cur,nxt:w===nxt});
+  return cols;
+}
+function conflicts(ms){
+  var seen={},bad={};
+  ms.forEach(function(m){
+    if(!m.data||!m.hora||!active(m))return;
+    [m.analista,m.copiloto].forEach(function(p){if(!p)return;var k=p+"|"+m.data+"|"+m.hora;(seen[k]=seen[k]||[]).push(m.id)});
+  });
+  Object.keys(seen).forEach(function(k){if(seen[k].length>1)seen[k].forEach(function(i){bad[i]=1})});
+  return bad;
+}
+
+/* ---------- renderização ---------- */
+function coverHTML(ms){
+  var dated=ms.filter(function(m){return m.data&&colOf(m)!=="jul"&&active(m)}).length;
+  var ag=ms.filter(function(m){return !m.data&&active(m)}).length;
+  var hrs=ms.filter(function(m){return m.hora}).length;
+  var div=ms.filter(function(m){return (m.flags||[]).indexOf("divergencia")>-1}).length;
+  var ed=Object.keys(overrides).length+REPORT.length;
+  var dn=ms.filter(function(m){return m.status==="realizada"}).length,cn=ms.filter(function(m){return m.status==="cancelada"}).length;
+  var cur=monday(TODAY);
+  return '<div class="wrap"><div class="sig"><b>UPFY</b>Marketing<br>Digital</div><div><h1>Mapa de reuniões<br>com clientes</h1>'
+   +'<p class="sub">Agosto a novembro de 2026, com uma agenda para cada analista e todas as semanas visíveis.</p>'
+   +'<p class="now">Hoje, '+wd(TODAY)+' '+fmt(TODAY)+' <span>· semana em foco '+fmt(cur)+' a '+fmt(addDays(cur,6))+' ('+slot(cur)+')</span></p>'
+   +'<div class="seals">'
+   +'<div class="seal"><b>'+dated+'</b><span>com data nas tabelas</span></div>'
+   +'<div class="seal"><b>'+ag+'</b><span>ainda a agendar</span></div>'
+   +'<div class="seal"><b>'+hrs+'</b><span>com horário informado</span></div>'
+   +'<div class="seal"><b>'+div+'</b><span>datas para conferir</span></div>'
+   +'<div class="seal"><b>'+dn+'</b><span>realizadas (check)</span></div>'
+   +'<div class="seal"><b>'+cn+'</b><span>canceladas</span></div>'
+   +'<div class="seal"><b>'+ed+'</b><span>edições sobre a tabela</span></div>'
+   +'</div></div><div class="tagline">Estratégia<br>Consultoria<br>Aceleração</div></div>';
+}
+function resumoHTML(ms){
+  var cur=monday(TODAY),nxt=addDays(cur,7);
+  function wk(w){return ms.filter(function(m){return colOf(m)===w&&active(m)})}
+  var c=wk(cur),n=wk(nxt);
+  var cd=c.filter(function(m){return m.data}),cs=c.filter(function(m){return !m.data});
+  var passou=cd.filter(function(m){return m.data<TODAY}),hoje=cd.filter(function(m){return m.data===TODAY}),depois=cd.filter(function(m){return m.data>TODAY});
+  var nd=n.filter(function(m){return m.data}),ns=n.filter(function(m){return !m.data});
+  var bullets=[];
+  bullets.push("<b>Esta semana ("+fmt(cur)+" a "+fmt(addDays(cur,6))+"):</b> "+cd.length+" reuniões com data. "+passou.length+" com data já passada"+(hoje.length?", "+hoje.length+" hoje":"")+" e "+depois.length+" ainda por vir."+(cs.length?" Há "+cs.length+" sem data.":""));
+  if(hoje.length)bullets.push("<b>Hoje, "+wd(TODAY)+" "+fmt(TODAY)+":</b> "+list(hoje.map(function(m){return esc(m.cliente)+" ("+esc(m.analista)+(m.hora?", "+esc(m.hora):"")+")"}))+".");
+  if(depois.length){var ds=depois.slice().sort(byDate);bullets.push("<b>Falta nesta semana:</b> "+list(ds.map(function(m){return esc(m.cliente)+" ("+wd(m.data)+" "+fmt(m.data)+")"}))+".")}
+  var porA={};ns.forEach(function(m){porA[m.analista]=(porA[m.analista]||0)+1});
+  bullets.push("<b>Próxima semana ("+fmt(nxt)+" a "+fmt(addDays(nxt,6))+"):</b> "+nd.length+" com data e "+ns.length+" ainda a agendar"+(ns.length?" ("+list(Object.keys(porA).map(function(k){return esc(k)+" "+porA[k]})) +").":"."));
+  return '<p class="eyebrow">Resumo</p><h2>O que pede atenção agora</h2><ul class="points">'+bullets.map(function(b){return "<li>"+b+"</li>"}).join("")+"</ul>";
+}
+function globalHTML(ms,cols){
+  var data=cols.map(function(c){
+    var x=ms.filter(function(m){return colOf(m)===c.key&&active(m)});
+    return {c:c,d:x.filter(function(m){return m.data}).length,a:x.filter(function(m){return !m.data}).length};
+  });
+  var mx=Math.max.apply(null,data.map(function(x){return x.d+x.a}).concat([1]));
+  var bars=data.map(function(x){
+    var hd=Math.round(x.d/mx*110),ha=Math.round(x.a/mx*110);
+    var lab=x.c.key==="jul"?"Jul":fmt(x.c.key);
+    return '<button class="wcol'+(x.c.focus?" foc":"")+'" data-goto="'+x.c.key+'" title="'+esc(x.c.label)+': '+x.d+' com data, '+x.a+' a agendar"><span class="n">'+(x.d+x.a)+'</span><span class="stack">'+(ha?'<span class="a" style="height:'+ha+'px"></span>':'')+'<span class="d" style="height:'+hd+'px"></span></span><span class="l">'+lab+'</span></button>';
+  }).join("");
+  var cur=monday(TODAY),nxt=addDays(cur,7);
+  var rows=ANALISTAS.map(function(a){
+    var own=ms.filter(function(m){return m.analista===a&&colOf(m)!=="jul"});
+    var cl={};own.forEach(function(m){cl[m.cliente]=1});
+    function cnt(w){return ms.filter(function(m){return m.analista===a&&colOf(m)===w&&active(m)&&m.data}).length}
+    var cp={};ms.forEach(function(m){if(m.copiloto===a&&m.analista!==a&&colOf(m)!=="jul")cp[m.cliente]=1});
+    var ag=ms.filter(function(m){return m.analista===a&&!m.data&&active(m)}).length;
+    return "<tr><td><b>"+a+"</b></td><td class='num'>"+Object.keys(cl).length+"</td><td class='num'>"+cnt(cur)+"</td><td class='num'>"+cnt(nxt)+"</td><td class='num'>"+ag+"</td><td class='num'>"+Object.keys(cp).length+"</td></tr>";
+  }).join("");
+  return '<p class="eyebrow">Visão global</p><h2>Carga por semana e por piloto</h2>'
+   +'<div class="global"><div><div class="strip">'+bars+'</div><div class="legend"><span><i style="background:var(--accent)"></i>Semanas em foco</span><span><i style="background:var(--bar)"></i>Com data</span><span><i style="border:1px dashed var(--accent-ink)"></i>A agendar</span></div></div>'
+   +'<div class="tbl"><table><thead><tr><th>Piloto</th><th class="num">Clientes</th><th class="num">Esta semana</th><th class="num">Próxima</th><th class="num">A agendar</th><th class="num">Copiloto em</th></tr></thead><tbody>'+rows+'</tbody></table><p class="hint">Contagens e pendências de agendamento são do piloto. O copiloto aparece nos cartões com borda tracejada e não entra nas contagens.</p></div></div>';
+}
+function cardHTML(m,a,c,bad){
+  var st=status(m),cop=m.copiloto===a&&m.analista!==a,fl=m.flags||[];
+  var when=m.data?wd(m.data)+" "+fmt(m.data)+(m.hora?" · "+esc(m.hora):""):"Data a definir";
+  var tags="";
+  if(fl.indexOf("offboarding")>-1)tags+='<span class="tg off">Offboarding</span>';
+  if(bad[m.id])tags+='<span class="tg warn">Conflito de horário</span>';
+  if(fl.indexOf("divergencia")>-1)tags+='<span class="tg warn">Conferir data</span>';
+  if(fl.indexOf("piloto")>-1)tags+='<span class="tg opt">Novo piloto</span>';
+  if(fl.indexOf("novo")>-1)tags+='<span class="tg opt">Novo</span>';
+  if(fl.indexOf("destaque")>-1)tags+='<span class="tg opt">Destaque</span>';
+  if(fl.indexOf("notion")>-1)tags+='<span class="tg opt">Notion</span>';
+  if(overrides[m.id])tags+='<span class="tg opt">'+(baseMap[m.id]?"Editado":"Nova")+"</span>";
+  var who=cop?(m.data?"Copiloto · piloto "+esc(m.analista):"Copiloto · quem agenda é o piloto "+esc(m.analista)):(m.copiloto?"Copiloto: "+esc(m.copiloto):"");
+  var link=/^https?:\/\//i.test(m.link||"")?'<a class="lk" href="'+esc(m.link)+'" target="_blank" rel="noopener">Abrir agenda</a>':"";
+  var done=st==="realizada";
+  var ck=st==="cancelada"?"":'<button class="ck" data-check="'+esc(m.id)+'" aria-pressed="'+done+'" title="'+(done?"Desmarcar como realizada":"Marcar como realizada")+'" aria-label="'+(done?"Desmarcar":"Marcar")+' '+esc(m.cliente)+' como realizada">✓</button>';
+  return '<div class="mc st-'+st+(cop?" is-cop":"")+(fl.indexOf("offboarding")>-1?" offb":"")+'" data-id="'+esc(m.id)+'"><button class="mc-main" data-open="'+esc(m.id)+'"><span class="nm"><span>'+esc(m.cliente)+'</span>'+tags+'</span>'
+   +'<span class="wn">'+when+'</span><span class="ft"><span class="pill '+st+'">'+SL[st]+'</span>'+(who?'<span class="extra">'+who+'</span>':"")+"</span></button>"+ck+link+"</div>";
+}
+function boardHTML(ms,cols){
+  var lanes=filter==="Todos"?ANALISTAS:[filter],bad=conflicts(ms),h="";
+  lanes.forEach(function(a){
+    var own=ms.filter(function(m){return m.analista===a&&colOf(m)!=="jul"&&active(m)}),cl={};own.forEach(function(m){cl[m.cliente]=1});
+    var pend=ms.filter(function(m){return m.analista===a&&!m.data&&active(m)}).length;
+    h+='<div class="callout" data-a="'+a+'"><div class="co-head"><b>'+a+'</b><small>'+Object.keys(cl).length+' clientes como piloto'+(PAPEL[a]?" · "+esc(PAPEL[a]):"")+'</small><span class="co-n">'+pend+' a agendar</span></div><div class="weeks">';
+    cols.forEach(function(c){
+      var x=ms.filter(function(m){return colOf(m)===c.key&&(m.analista===a||m.copiloto===a)}).sort(byDate);
+      var inner=x.length?x.map(function(m){return cardHTML(m,a,c,bad)}).join(""):'<span class="none">Sem reuniões</span>';
+      var add=(!RO&&c.key!=="jul")?'<button class="add" data-add="'+a+"|"+c.key+'">+ Adicionar</button>':"";
+      h+='<div class="wk-col'+(c.focus?" foc":"")+'" data-col="'+c.key+'"><div class="wh'+(c.focus?" foc":"")+'"><span class="wk">'+c.label+'</span><span class="sl">'+c.sl+'</span>'
+       +(c.cur?'<span class="bd">Esta semana</span>':c.nxt?'<span class="bd">Próxima semana</span>':"")+'</div>'
+       +'<div class="cell'+(c.focus?" foc":"")+'"><div class="cards">'+inner+add+"</div></div></div>";
+    });
+    h+="</div></div>";
+  });
+  return h;
+}
+function riscosHTML(ms){
+  var cur=monday(TODAY),nxt=addDays(cur,7);
+  var a1=ms.filter(function(m){return !m.data&&active(m)&&(colOf(m)===cur||colOf(m)===nxt)}).sort(function(x,y){return x.analista.localeCompare(y.analista)||x.cliente.localeCompare(y.cliente)});
+  var porCliente={};
+  ms.forEach(function(m){(porCliente[m.cliente]=porCliente[m.cliente]||[]).push(m)});
+  var semProx=[],soJulho=[];
+  Object.keys(porCliente).forEach(function(k){
+    var x=porCliente[k].filter(active);
+    if(!x.length)return;
+    if(x.every(function(m){return colOf(m)==="jul"})){soJulho.push({k:k,m:x.sort(byDate).pop()});return}
+    var fut=x.some(function(m){return !m.data||m.data>=TODAY});
+    if(!fut){var last=x.filter(function(m){return m.data}).sort(byDate).pop();semProx.push({k:k,m:last,d:days(last.data,TODAY)})}
+  });
+  semProx.sort(function(a,b){return b.d-a.d});
+  var div=ms.filter(function(m){return (m.flags||[]).indexOf("divergencia")>-1&&colOf(m)!=="jul"}).sort(byDate);
+  var bad=conflicts(ms),bm=ms.filter(function(m){return bad[m.id]});
+  function li(a,b){return "<li><span>"+a+"</span><span>"+b+"</span></li>"}
+  var r1='<div class="risk"><p class="tag-h">Prioridade</p><h3>A agendar nas semanas em foco<span>'+a1.length+'</span></h3>'
+    +(a1.length?"<ul>"+a1.map(function(m){return li("<b>"+esc(m.cliente)+"</b>",esc(m.analista)+" · "+fmt(colOf(m)))}).join("")+"</ul>":"<p>Nada pendente de data nas duas semanas em foco.</p>")+"</div>";
+  var r2='<div class="risk"><p class="tag-h">Hipótese a confirmar</p><h3>Sem próxima reunião nem vaga prevista<span>'+semProx.length+'</span></h3>'
+    +(semProx.length?"<ul>"+semProx.map(function(x){return li("<b>"+esc(x.k)+"</b>",esc(x.m.analista)+" · última "+fmt(x.m.data)+" ("+(x.d===0?"hoje":x.d+" d")+")")}).join("")+"</ul><p>Pode ser só que a tabela ainda não tenha a próxima data. Confirme com o analista.</p>":"<p>Todos os clientes têm data futura ou vaga a agendar.</p>")+"</div>";
+  var r3='<div class="risk"><p class="tag-h">Fato da tabela</p><h3>Datas fora da coluna da semana<span>'+div.length+'</span></h3>'
+    +(div.length?"<ul>"+div.map(function(m){return li("<b>"+esc(m.cliente)+"</b>",esc(m.analista)+" · "+fmt(m.data)+" (tabela: "+esc(m.origem)+")")}).join("")+"</ul><p>Eu posicionei pela data, não pela coluna.</p>":"<p>Nenhuma divergência.</p>")+"</div>";
+  var r4='<div class="risk"><p class="tag-h">Fato da tabela</p><h3>Só aparecem em julho<span>'+soJulho.length+'</span></h3>'
+    +(soJulho.length?"<ul>"+soJulho.map(function(x){return li("<b>"+esc(x.k)+"</b>",esc(x.m.analista)+" · "+fmt(x.m.data))}).join("")+"</ul><p>Não constam nas tabelas de agosto a outubro. Pode ter saído da carteira ou a tabela estar incompleta.</p>":"<p>Nenhum.</p>")+"</div>";
+  var r5='<div class="risk"><p class="tag-h">Alerta</p><h3>Conflitos de horário<span>'+bm.length+'</span></h3>'
+    +(bm.length?"<ul>"+bm.sort(byDate).map(function(m){return li("<b>"+esc(m.cliente)+"</b>",fmt(m.data)+" "+esc(m.hora))}).join("")+"</ul>":"<p>Nenhum conflito registrado. A checagem só vale para reuniões com horário preenchido.</p>")+"</div>";
+  var cc=ms.filter(function(m){return m.status==="cancelada"}).sort(byDate);
+  var r6=cc.length?'<div class="risk cancel"><p class="tag-h">Cancelamentos</p><h3>Reuniões canceladas<span>'+cc.length+'</span></h3><ul>'+cc.map(function(m){return li("<b>"+esc(m.cliente)+"</b>",esc(m.analista)+(m.data?" · "+fmt(m.data):""))}).join("")+"</ul><p>Reagende com o piloto se ainda fizer sentido.</p></div>":"";
+  return '<p class="eyebrow">Riscos e pendências</p><h2>Onde olhar primeiro</h2><div class="risks">'+r6+r1+r2+r3+r4+r5+"</div>";
+}
+function fontesHTML(){
+  return '<p class="eyebrow">Fontes e limites</p><h2>O que este mapa sabe e o que não sabe</h2><ul class="src">'
+  +"<li><b>Fonte:</b> as cinco tabelas por analista (Alcides, Rita, Mateus, Felix e Bruno) e as listas de reuniões de julho que você enviou. Nada foi conferido na Google Agenda.</li>"
+  +"<li><b>Semanas:</b> de segunda a domingo. Os rótulos AGO, SET e OUT com S1 a S4 seguem o mês da quinta-feira de cada semana, o que bate com todas as datas das tabelas, exceto as 4 marcadas como \"Conferir data\".</li>"
+  +"<li><b>Reuniões compartilhadas:</b> Duppla e BeYou Shoes (piloto Alcides) e Elira (piloto Bruno, copiloto Alcides) aparecem nas duas tabelas com as mesmas datas. Cada uma é contada uma vez, com o piloto e o copiloto indicados. Alcides aparece como piloto de Klein Shoes e Inspires por só constarem na tabela dele.</li>"
+  +"<li><b>Pilotos:</b> atualizados pela lista de clientes enviada. Duppla e BeYou Shoes passaram para o Alcides, Betina Borges ficou com a Rita e Mariza Dias, Voa Fitness (Alcides) e Briges (Rita) foram incluídos como vagas a agendar em 05/10. Offboarding: Doce Trama e Pixolé, com a próxima reunião da Doce Trama cancelada.</li>"
+  +"<li><b>Prioridade de agendamento:</b> vale só o piloto. O copiloto aparece como apoio e não entra nas contagens nem nas pendências de \"a agendar\".</li>"
+  +"<li><b>Horários:</b> só 4 reuniões de julho têm horário. As demais estão como \"a definir\".</li>"
+  +"<li><b>Status:</b> datas passadas aparecem como \"Data passada\", não como realizadas, porque as tabelas não dizem. Use o check do cartão para marcar como realizada quando confirmar. Reuniões canceladas ficam em vermelho e saem das contagens.</li>"
+  +"<li><b>ELAZ e Betina Borges em julho:</b> Elaz consta nas listas de julho do Felix e do Bruno; Betina consta na lista do Bruno e hoje está com a Rita. O negrito em 28/08 da Betina foi mantido como \"Destaque\", sem significado informado.</li>"
+  +(REPORT.length?"<li><b>Atualização pelo Notion:</b> horários e datas de 29/09 a 06/10 vieram do print do Calendário 2026. As 5 entradas sem data do Notion não apareciam no print e não foram consideradas. Nada foi lido nem alterado na Google Agenda.</li>":"")
+  +"<li><b>Edições:</b> ficam guardadas por cima da tabela original e o histórico registra quem mudou, o quê e quando. Se a página não conseguir salvar para o time, as edições ficam só neste navegador.</li>"
+  +"</ul>";
+}
+function histHTML(ms,names){
+  var rem=meetings(true).filter(function(m){return m.removida});
+  var h='<p class="eyebrow">Histórico</p><h2>Alterações feitas por cima da tabela</h2>';
+  if(REPORT.length)h+='<div class="risk" style="margin-top:14px"><p class="tag-h">Atualização de 30/09/2026</p><h3>Conferido com o print do Notion (Calendário 2026)<span>'+REPORT.length+'</span></h3><ul>'+REPORT.map(function(r){return "<li><span><b>"+esc(r[0])+"</b> · "+esc(r[1])+"</span><span>"+esc(r[2])+" → "+esc(r[3])+"</span></li>"}).join("")+"</ul><p>Compromissos internos, comerciais e pessoais do print não entram neste mapa.</p></div>";
+  if(!hist.length)h+='<p class="lead">Nenhuma alteração até agora. Cada edição, exclusão e restauração aparece aqui com data, hora e autor.</p>';
+  else h+='<ul class="hist" style="margin-top:14px">'+hist.map(function(x){
+    var d=new Date(x.ts),who=(x.uid&&names[x.uid])||"";
+    return "<li><time>"+pad(d.getDate())+"/"+pad(d.getMonth()+1)+" "+pad(d.getHours())+":"+pad(d.getMinutes())+"</time><span><b>"+esc(x.cliente)+"</b> · "+esc(x.acao)+(who?" · "+esc(who):"")+"</span></li>";
+  }).join("")+"</ul>";
+  if(rem.length)h+='<div class="risk" style="margin-top:18px"><h3>Reuniões excluídas<span>'+rem.length+'</span></h3><ul>'+rem.map(function(m){return '<li><span><b>'+esc(m.cliente)+"</b> · "+esc(m.analista)+(m.data?" · "+fmt(m.data):"")+'</span><span>'+(RO?"":'<button class="btn ghost" data-restore="'+esc(m.id)+'">Restaurar</button>')+"</span></li>"}).join("")+"</ul></div>";
+  return h;
+}
+
+var histNames={},lastUids="";
+function render(keepScroll){
+  TODAY=iso(new Date());
+  var ms=meetings(),cols=computeCols(ms),b=document.getElementById("board"),sy=window.scrollY,sx=Array.prototype.map.call(b.querySelectorAll(".weeks"),function(w){return w.scrollLeft});
+  document.getElementById("cover").innerHTML=coverHTML(ms);
+  document.getElementById("resumo").innerHTML=resumoHTML(ms);
+  document.getElementById("global").innerHTML=globalHTML(ms,cols);
+  b.innerHTML=boardHTML(ms,cols);
+  if(keepScroll!==false){Array.prototype.forEach.call(b.querySelectorAll(".weeks"),function(w,i){w.scrollLeft=sx[i]||0});window.scrollTo(window.scrollX,sy)}
+  document.getElementById("hint").textContent=RO?"Somente leitura: você pode ver o mapa, mas não editar.":"Dica: clique em uma reunião para editar. Em \"+ Adicionar\" você cria uma vaga \"a agendar\" naquela semana.";
+  document.getElementById("riscos").innerHTML=riscosHTML(ms);
+  document.getElementById("historico").innerHTML=histHTML(ms,histNames);
+  document.getElementById("fontes").innerHTML=fontesHTML();
+  document.getElementById("chips").innerHTML=["Todos"].concat(ANALISTAS).map(function(a){return '<button class="chip" data-f="'+a+'" aria-pressed="'+(a===filter)+'">'+a+"</button>"}).join("");
+  document.getElementById("b-new").disabled=RO;
+  var sy2=document.getElementById("sync");sy2.setAttribute("data-s",mode==="shared"?"shared":"x");
+  sy2.lastChild.textContent=RO?"Somente leitura":mode==="shared"?"Salvo para o time":mode==="local"?"Só neste navegador":"Conectando";
+  resolveNames();
+}
+function scrollToCol(key){
+  Array.prototype.forEach.call(document.querySelectorAll("#board .weeks"),function(w){
+    var el=w.querySelector('.wk-col[data-col="'+key+'"]');
+    if(el)w.scrollLeft=Math.max(0,el.offsetLeft-w.offsetLeft-2);
+  });
+}
+function resolveNames(){
+  var uids=[],seen={};hist.forEach(function(x){if(x.uid&&!seen[x.uid]){seen[x.uid]=1;uids.push(x.uid)}});
+  var key=uids.join(",");
+  if(!USER||!uids.length||key===lastUids)return;
+  lastUids=key;
+  USER.profiles(uids).then(function(ps){
+    var ch=false;uids.forEach(function(u){var n=(ps[u]&&ps[u].name)||"";if(n&&histNames[u]!==n){histNames[u]=n;ch=true}});
+    if(ch)document.getElementById("historico").innerHTML=histHTML(meetings(),histNames);
+  }).catch(function(){});
+}
+
+/* ---------- persistência ---------- */
+function toast(t){var e=document.getElementById("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(function(){e.classList.remove("on")},2600)}
+function dbErr(e){
+  var c=e&&e.code;
+  if(c==="invalid_argument"||c==="revoked"){RO=true;render();toast("Sem permissão para editar. O mapa ficou somente leitura.")}
+  else toast("Não consegui salvar agora. Tente de novo em instantes.");
+}
+function writeDoc(doc){
+  overrides[doc.id]=doc;
+  if(DB)return DB.doc("reunioes/"+doc.id).set(doc).then(function(){return true},function(e){dbErr(e);return false});
+  saveLocal();return Promise.resolve(true);
+}
+function dropDoc(id){
+  delete overrides[id];
+  if(DB)return DB.doc("reunioes/"+id).delete().then(function(){return true},function(e){dbErr(e);return false});
+  saveLocal();return Promise.resolve(true);
+}
+function logAct(m,acao){
+  var e={ts:Date.now(),uid:UID,id:m.id,cliente:m.cliente,acao:acao};
+  hist.unshift(e);hist=hist.slice(0,40);
+  if(DB)DB.collection("historico").add(e).catch(function(){});else saveLocal();
+}
+
+/* ---------- gaveta ---------- */
+function $(id){return document.getElementById(id)}
+function fillSelects(){
+  $("m-analista").innerHTML=ANALISTAS.map(function(a){return '<option value="'+a+'">'+a+"</option>"}).join("");
+  $("m-copiloto").innerHTML='<option value="">Sem copiloto</option>'+ANALISTAS.map(function(a){return '<option value="'+a+'">'+a+"</option>"}).join("");
+}
+function fillWeeks(sel){
+  var cols=computeCols(meetings()).filter(function(c){return c.key!=="jul"});
+  $("m-semana").innerHTML=cols.map(function(c){return '<option value="'+c.key+'">'+c.label+" · "+c.sl+"</option>"}).join("");
+  if(sel&&!cols.some(function(c){return c.key===sel}))$("m-semana").insertAdjacentHTML("beforeend",'<option value="'+sel+'">'+fmt(sel)+" a "+fmt(addDays(sel,6))+"</option>");
+  if(sel)$("m-semana").value=sel;
+}
+function syncSemana(){$("f-semana").hidden=!!$("m-data").value}
+function openDrawer(id,pre){
+  editing=id;preset=pre||null;delArmed=false;
+  var m=id?meetings(true).filter(function(x){return x.id===id})[0]:null;
+  fillSelects();
+  var base=m||{cliente:"",analista:(pre&&pre.analista)||(filter!=="Todos"?filter:ANALISTAS[0]),copiloto:"",data:"",hora:"",semana:(pre&&pre.semana)||monday(TODAY),status:"",link:"",pauta:""};
+  $("d-title").textContent=m?"Editar reunião":"Nova reunião";
+  $("d-origin").textContent=m?(m.origem?"Origem: "+m.origem:"Criada nesta página"):"Sem data, ela entra como \"a agendar\" na semana escolhida.";
+  $("m-cliente").value=base.cliente;$("m-analista").value=base.analista;$("m-copiloto").value=base.copiloto||"";
+  $("m-data").value=base.data||"";$("m-hora").value=base.hora||"";$("m-status").value=base.status||"";$("m-link").value=base.link||"";$("m-pauta").value=base.pauta||"";
+  fillWeeks(base.semana||monday(TODAY));syncSemana();
+  var n=$("d-note");n.hidden=!(m&&m.nota);n.textContent=m&&m.nota?m.nota:"";
+  $("d-err").textContent="";
+  $("d-revert").hidden=!(m&&baseMap[m.id]&&overrides[m.id]);
+  $("d-del").hidden=!m;$("d-del").textContent="Excluir";$("d-cancel").hidden=!m;syncCancel();
+  ["m-cliente","m-analista","m-copiloto","m-data","m-hora","m-semana","m-status","m-link","m-pauta","d-save","d-clear","d-del","d-revert","d-cancel"].forEach(function(i){$(i).disabled=RO});
+  $("scrim").classList.add("on");$("drawer").classList.add("on");$("drawer").setAttribute("aria-hidden","false");drawerOpen=true;
+  setTimeout(function(){$("m-cliente").focus()},60);
+}
+function closeDrawer(){$("scrim").classList.remove("on");$("drawer").classList.remove("on");$("drawer").setAttribute("aria-hidden","true");drawerOpen=false;editing=null}
+var LBL={cliente:"cliente",analista:"analista",copiloto:"copiloto",data:"data",hora:"horário",status:"status",link:"link",pauta:"pauta"};
+function showV(k,v){if(k==="data")return v?fmt(v):"sem data";if(k==="status")return v?SL[v]:"automático";return v||"vazio"}
+function saveForm(){
+  if(RO)return;
+  var v={cliente:$("m-cliente").value.trim(),analista:$("m-analista").value,copiloto:$("m-copiloto").value,data:$("m-data").value,hora:$("m-hora").value,semana:$("m-semana").value,status:$("m-status").value,link:$("m-link").value.trim(),pauta:$("m-pauta").value.trim()};
+  if(!v.cliente){$("d-err").textContent="Informe o nome do cliente.";$("m-cliente").focus();return}
+  if(v.link&&!/^https?:\/\//i.test(v.link)){$("d-err").textContent="O link precisa começar com http:// ou https://.";$("m-link").focus();return}
+  if(v.copiloto===v.analista)v.copiloto="";
+  var prev=editing?meetings(true).filter(function(x){return x.id===editing})[0]:null;
+  var id=editing||("n-"+Date.now().toString(36)+Math.random().toString(36).slice(2,5));
+  var doc=Object.assign({flags:[],origem:"",nota:""},prev||{},{id:id,cliente:v.cliente,analista:v.analista,copiloto:v.copiloto,data:v.data,hora:v.hora,status:v.status,link:v.link,pauta:v.pauta,removida:false,atualizadoEm:Date.now(),atualizadoPor:UID||""});
+  doc.semana=v.data?monday(v.data):v.semana;
+  var acao;
+  if(!prev)acao="criou a reunião"+(v.data?" para "+fmt(v.data):" como a agendar");
+  else{
+    var ch=[];Object.keys(LBL).forEach(function(k){if((prev[k]||"")!==(doc[k]||""))ch.push(LBL[k]+": "+showV(k,prev[k])+" para "+showV(k,doc[k]))});
+    if(!v.data&&(prev.semana||"")!==doc.semana&&!prev.data)ch.push("semana prevista: "+fmt(prev.semana)+" para "+fmt(doc.semana));
+    if(!ch.length){closeDrawer();toast("Nada mudou.");return}
+    acao=(doc.status==="cancelada"&&prev.status!=="cancelada")?"cancelou a reunião":(prev.status==="cancelada"&&doc.status!=="cancelada")?"reativou a reunião":"alterou "+ch.join("; ");
+  }
+    writeDoc(doc).then(function(ok){if(ok){logAct(doc,acao);toast("Reunião salva.")}render()});
+  render();closeDrawer();
+}
+function deleteForm(){
+  if(RO||!editing)return;
+  if(!delArmed){delArmed=true;$("d-del").textContent="Confirmar exclusão";$("d-err").textContent="Clique de novo para excluir. Dá para restaurar no histórico.";return}
+  var m=meetings(true).filter(function(x){return x.id===editing})[0];if(!m)return;
+  var doc=Object.assign({},m,{removida:true,atualizadoEm:Date.now(),atualizadoPor:UID||""});
+  closeDrawer();render();
+  writeDoc(doc).then(function(ok){if(ok){logAct(doc,"excluiu a reunião");toast("Reunião excluída.")}render()});
+}
+function revertForm(){
+  if(RO||!editing)return;
+  var m=baseMap[editing];if(!m)return;var id=editing;
+  closeDrawer();
+  dropDoc(id).then(function(ok){if(ok){logAct(m,"voltou ao original da tabela");toast("Voltou ao original.")}render()});render();
+}
+function toggleDone(id){
+  if(RO){toast("Somente leitura.");return}
+  var m=meetings(true).filter(function(x){return x.id===id})[0];if(!m)return;
+  if(m.status!=="realizada"&&!m.data){toast("Defina a data antes de marcar como realizada.");return}
+  var on=m.status!=="realizada";
+  var doc=Object.assign({},m,{status:on?"realizada":"",atualizadoEm:Date.now(),atualizadoPor:UID||""});
+  writeDoc(doc).then(function(ok){if(ok){logAct(doc,on?"marcou como realizada":"desmarcou a realização");toast(on?"Marcada como realizada.":"Desmarcada.")}render()});render();
+}
+function toggleCancel(){
+  if(RO||!editing)return;
+  $("m-status").value=$("m-status").value==="cancelada"?"":"cancelada";
+  syncCancel();saveForm();
+}
+function syncCancel(){
+  var c=$("m-status").value==="cancelada";
+  $("d-cnote").hidden=!c;$("d-cancel").textContent=c?"Reativar reunião":"Cancelar reunião";
+}
+function restore(id){
+  var m=meetings(true).filter(function(x){return x.id===id})[0];if(!m||RO)return;
+  var doc=Object.assign({},m,{removida:false,atualizadoEm:Date.now(),atualizadoPor:UID||""});
+  writeDoc(doc).then(function(ok){if(ok){logAct(doc,"restaurou a reunião");toast("Reunião restaurada.")}render()});render();
+}
+
+/* ---------- eventos ---------- */
+document.addEventListener("click",function(e){
+  var t=e.target;
+  if(t.closest("a"))return;
+  var f=t.closest("[data-f]");if(f){filter=f.getAttribute("data-f");render();return}
+  var g=t.closest("[data-goto]");if(g){document.getElementById("detalhe").scrollIntoView({behavior:"smooth",block:"start"});scrollToCol(g.getAttribute("data-goto"));return}
+  var ad=t.closest("[data-add]");if(ad){if(RO)return;var p=ad.getAttribute("data-add").split("|");openDrawer(null,{analista:p[0],semana:p[1]});return}
+  var rs=t.closest("[data-restore]");if(rs){restore(rs.getAttribute("data-restore"));return}
+  var mc=t.closest(".mc");
+  if(mc){
+    var ck=t.closest("[data-check]");
+    if(ck){toggleDone(ck.getAttribute("data-check"));return}
+    openDrawer(mc.getAttribute("data-id"));return;
+  }
+});
+document.addEventListener("keydown",function(e){
+  if(e.key==="Escape"&&drawerOpen){closeDrawer();return}
+});
+$("b-focus").addEventListener("click",function(){document.getElementById("detalhe").scrollIntoView({behavior:"smooth",block:"start"});scrollToCol(monday(TODAY))});
+$("b-new").addEventListener("click",function(){openDrawer(null)});
+$("d-x").addEventListener("click",closeDrawer);$("scrim").addEventListener("click",closeDrawer);
+$("d-save").addEventListener("click",saveForm);$("d-del").addEventListener("click",deleteForm);$("d-revert").addEventListener("click",revertForm);
+$("d-clear").addEventListener("click",function(){$("m-data").value="";syncSemana()});
+$("m-data").addEventListener("input",syncSemana);$("m-status").addEventListener("change",syncCancel);$("d-cancel").addEventListener("click",toggleCancel);
+$("dform").addEventListener("submit",function(e){e.preventDefault();saveForm()});
+document.addEventListener("visibilitychange",function(){if(!document.hidden&&iso(new Date())!==TODAY)render()});
+
+/* ---------- início ---------- */
+loadLocal();render(false);
+setTimeout(function(){scrollToCol(monday(TODAY))},0);
+(function connect(){
+  var c=window.claude;
+  if(!c||!c.use){mode="local";render();return}
+  Promise.all([c.use("db"),c.use("user")]).then(function(r){
+    DB=r[0];USER=r[1];
+    var p=USER?Promise.all([USER.id(),USER.can("data.write")]):Promise.resolve(["",null]);
+    return p.then(function(x){
+      UID=x[0]||"";
+      if(!DB){mode="local";render();return}
+      if(x[1]===false)RO=true;
+      mode="shared";overrides={};hist=[];
+      DB.collection("reunioes").onSnapshot(function(s){var o={};s.docs.forEach(function(d){o[d.id]=d.data()});overrides=o;render()},function(){mode="local";DB=null;loadLocal();render()});
+      DB.collection("historico").orderBy("ts","desc").limit(40).onSnapshot(function(s){hist=s.docs.map(function(d){return d.data()});render()},function(){});
+      render();
+    });
+  }).catch(function(){mode="local";DB=null;render()});
+})();
+})();
+</script>
+</body></html>
