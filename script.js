@@ -48,3 +48,6 @@ if("IntersectionObserver" in window&&!reduce){const co=new IntersectionObserver(
 /* barra de progresso */
 const bar=document.getElementById("progress");
 if(bar){let tk=false;const up=()=>{const d=document.documentElement,m=d.scrollHeight-innerHeight;bar.style.transform="scaleX("+(m>0?scrollY/m:0)+")";tk=false};addEventListener("scroll",()=>{if(!tk){tk=true;requestAnimationFrame(up)}},{passive:true});up()}
+
+const cp=document.getElementById("copyMail");
+if(cp)cp.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(cp.dataset.copy);cp.textContent="Copiado ✓";cp.classList.add("done")}catch(e){cp.textContent="Selecione e copie"}setTimeout(()=>{cp.textContent="Copiar";cp.classList.remove("done")},2000)});
